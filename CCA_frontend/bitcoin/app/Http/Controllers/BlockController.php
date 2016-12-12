@@ -76,7 +76,7 @@ class BlockController extends Controller
             'time'              => true,
             'transactions'      => true,
             'sum_of_outputs'    => true
-        ])->sort(["height" => -1]);
+        ]);
         $pagination = $this->renderPagination(True);
         return view('block/findAll', compact('blocks', 'pagination', 'total', 'currency'));
     }

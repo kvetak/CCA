@@ -26,8 +26,7 @@ return [
     |
     */
 
-    'debug' => env('APP_DEBUG', false),
-//    'debug' => env('APP_DEBUG', true),
+    'debug' => env('APP_DEBUG', true),
 
     /*
     |--------------------------------------------------------------------------
@@ -96,6 +95,8 @@ return [
 
     'cipher' => 'AES-256-CBC',
 
+    'NEO4J_DB' => env('NEO4J_DB'),
+
     /*
     |--------------------------------------------------------------------------
     | Logging Configuration
@@ -148,7 +149,6 @@ return [
         Illuminate\Translation\TranslationServiceProvider::class,
         Illuminate\Validation\ValidationServiceProvider::class,
         Illuminate\View\ViewServiceProvider::class,
-        Vinelab\NeoEloquent\NeoEloquentServiceProvider::class,
 
         /*
          * Application Service Providers...

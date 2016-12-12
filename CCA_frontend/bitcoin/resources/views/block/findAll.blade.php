@@ -9,11 +9,13 @@
     <div class="clearfix"></div>
     <table class="table table-striped">
     <thead>
-        <th>Height</th>
-        <th>Hash</th>
-        <th>Time</th>
-        <th>Transactions</th>
-        <th>Sum of outputs</th>
+        <tr>
+            <th>Height</th>
+            <th>Hash</th>
+            <th>Time</th>
+            <th>Transactions</th>
+            <th>Sum of outputs</th>
+        </tr>
     </thead>
     <tbody>
     @foreach($blocks as $block)

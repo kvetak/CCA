@@ -17,16 +17,19 @@ use Underscore\Types\Arrays;
 class BitcoinAddressModel extends BaseBitcoinModel
 {
     /**
+     * Název node, jak je uložen v databázi
+     */
+    const NODE_NAME="address";
+
+    /**
      * Typy zdrojov tagov adres.
      */
     const BLOCKCHAININFO_SOURCE = 1;
     /**
      * Typ akym bol tag nahrany do kolekcie.
      */
-    const WEB_SOURCE_TYPE = 1; //ziskany z web. stranky
-    const USER_INPUT_TYPE = 2; //uzivatelom zadany
-
-    public static $collection = 'addresses';
+    const WEB_SOURCE_TYPE = 1, //ziskany z web. stranky
+         USER_INPUT_TYPE = 2; //uzivatelom zadany
 
     /**
      * Adresa
@@ -43,6 +46,12 @@ class BitcoinAddressModel extends BaseBitcoinModel
      * @var bool
      */
     protected $balanceChanged;
+
+    protected function getNodeName()
+    {
+        return self::NODE_NAME;
+    }
+
 
     /**
      * BitcoinAddressModel constructor.

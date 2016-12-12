@@ -1,7 +1,6 @@
 <?php
 
 namespace App\Model\Bitcoin;
-use App\Model\CurrencyType;
 use Underscore\Types\Arrays;
 
 /**
@@ -15,10 +14,9 @@ use Underscore\Types\Arrays;
 class BitcoinBlockModel extends BaseBitcoinModel implements \ArrayAccess
 {
     /**
-     * Nazov kolekcie.
-     * @var string
+     * Název node, jak je uložen v databázi
      */
-    protected static $collection = 'blocks';
+    const NODE_NAME="block";
     /**
      * Hash bloku
      * @var string
@@ -52,6 +50,12 @@ class BitcoinBlockModel extends BaseBitcoinModel implements \ArrayAccess
         $this->height   = $blockHeight;
         $this->init();
     }
+
+    protected function getNodeName()
+    {
+        return self::NODE_NAME;
+    }
+
 
     /**
      * Inicializacta modelu.
@@ -198,6 +202,6 @@ class BitcoinBlockModel extends BaseBitcoinModel implements \ArrayAccess
 
     public function getCount()
     {
-        return $this->collection()->count();
+        return $this->count();
     }
 }

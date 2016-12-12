@@ -6,14 +6,12 @@ $vendorDir = dirname(dirname(__FILE__));
 $baseDir = dirname($vendorDir);
 
 return array(
-    'Vinelab\\NeoEloquent\\' => array($vendorDir . '/vinelab/neoeloquent/src'),
     'Unirest' => array($vendorDir . '/mashape/unirest-php/src'),
     'Prophecy\\' => array($vendorDir . '/phpspec/prophecy/src'),
     'Mockery' => array($vendorDir . '/mockery/mockery/library'),
     'League\\Monga' => array($vendorDir . '/league/monga/src'),
     'JakubOnderka\\PhpConsoleHighlighter' => array($vendorDir . '/jakub-onderka/php-console-highlighter/src'),
     'JakubOnderka\\PhpConsoleColor' => array($vendorDir . '/jakub-onderka/php-console-color/src'),
-    'Everyman\\Neo4j' => array($vendorDir . '/heydavid713/neo4jphp/lib'),
     'Doctrine\\Common\\Inflector\\' => array($vendorDir . '/doctrine/inflector/lib'),
     'Cron' => array($vendorDir . '/mtdowling/cron-expression/src'),
 );

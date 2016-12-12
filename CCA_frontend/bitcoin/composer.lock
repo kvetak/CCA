@@ -4,8 +4,8 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#composer-lock-the-lock-file",
         "This file is @generated automatically"
     ],
-    "hash": "a0699e8d46cccca27dc62fd31da1d6a2",
-    "content-hash": "45033559299520e73e28fd9b04a6bf70",
+    "hash": "0d976d3e82b6d01f2fa4c6d4d15d266f",
+    "content-hash": "6230b3d6ee84d931785f15e156c86ec9",
     "packages": [
         {
             "name": "anahkiasen/underscore-php",
@@ -59,20 +59,20 @@
         },
         {
             "name": "classpreloader/classpreloader",
-            "version": "3.0.0",
+            "version": "3.1.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/ClassPreloader/ClassPreloader.git",
-                "reference": "9b10b913c2bdf90c3d2e0d726b454fb7f77c552a"
+                "reference": "bc7206aa892b5a33f4680421b69b191efd32b096"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/ClassPreloader/ClassPreloader/zipball/9b10b913c2bdf90c3d2e0d726b454fb7f77c552a",
-                "reference": "9b10b913c2bdf90c3d2e0d726b454fb7f77c552a",
+                "url": "https://api.github.com/repos/ClassPreloader/ClassPreloader/zipball/bc7206aa892b5a33f4680421b69b191efd32b096",
+                "reference": "bc7206aa892b5a33f4680421b69b191efd32b096",
                 "shasum": ""
             },
             "require": {
-                "nikic/php-parser": "^1.0|^2.0",
+                "nikic/php-parser": "^1.0|^2.0|^3.0",
                 "php": ">=5.5.9"
             },
             "require-dev": {
@@ -81,7 +81,7 @@
             "type": "library",
             "extra": {
                 "branch-alias": {
-                    "dev-master": "3.0-dev"
+                    "dev-master": "3.1-dev"
                 }
             },
             "autoload": {
@@ -109,7 +109,7 @@
                 "class",
                 "preload"
             ],
-            "time": "2015-11-09 22:51:51"
+            "time": "2016-09-16 12:50:15"
         },
         {
             "name": "danielstjules/stringy",
@@ -369,6 +369,155 @@
             "time": "2016-11-15 16:27:29"
         },
         {
+            "name": "graphaware/neo4j-bolt",
+            "version": "1.8.0",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/graphaware/neo4j-bolt-php.git",
+                "reference": "1470f24967a399466edfea49e340df3950bd1c04"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/graphaware/neo4j-bolt-php/zipball/1470f24967a399466edfea49e340df3950bd1c04",
+                "reference": "1470f24967a399466edfea49e340df3950bd1c04",
+                "shasum": ""
+            },
+            "require": {
+                "ext-bcmath": "*",
+                "ext-mbstring": "*",
+                "graphaware/neo4j-common": "^3.0",
+                "myclabs/php-enum": "^1.4",
+                "php": ">= 5.6",
+                "symfony/event-dispatcher": "^2.7|^3.0"
+            },
+            "require-dev": {
+                "behat/behat": "~3.0.4",
+                "phpunit/phpunit": "^4.8",
+                "symfony/stopwatch": "^2.7"
+            },
+            "type": "library",
+            "autoload": {
+                "psr-4": {
+                    "GraphAware\\Bolt\\": "src/"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "Christophe Willemsen",
+                    "email": "christophe@graphaware.com"
+                }
+            ],
+            "description": "Neo4j Bolt Binary Protocol PHP Driver",
+            "time": "2016-10-16 16:42:03"
+        },
+        {
+            "name": "graphaware/neo4j-common",
+            "version": "3.3.0",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/graphaware/neo4j-php-commons.git",
+                "reference": "02e7bc40eaaaf3e920c315e64cf6a16653b36a96"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/graphaware/neo4j-php-commons/zipball/02e7bc40eaaaf3e920c315e64cf6a16653b36a96",
+                "reference": "02e7bc40eaaaf3e920c315e64cf6a16653b36a96",
+                "shasum": ""
+            },
+            "require": {
+                "myclabs/php-enum": "^1.4"
+            },
+            "require-dev": {
+                "phpunit/phpunit": "^4.0"
+            },
+            "type": "library",
+            "autoload": {
+                "psr-4": {
+                    "GraphAware\\Common\\": "src/"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "ApacheV2"
+            ],
+            "authors": [
+                {
+                    "name": "Christophe Willemsen",
+                    "email": "christophe@graphaware.com"
+                }
+            ],
+            "description": "Common Utilities library for Neo4j",
+            "keywords": [
+                "cypher",
+                "database",
+                "graph",
+                "neo4j",
+                "statement"
+            ],
+            "time": "2016-10-16 16:36:13"
+        },
+        {
+            "name": "graphaware/neo4j-php-client",
+            "version": "4.6.4",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/graphaware/neo4j-php-client.git",
+                "reference": "8120b988fb15ca9e4ff5ed4faa42b0b0ad0fc65b"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/graphaware/neo4j-php-client/zipball/8120b988fb15ca9e4ff5ed4faa42b0b0ad0fc65b",
+                "reference": "8120b988fb15ca9e4ff5ed4faa42b0b0ad0fc65b",
+                "shasum": ""
+            },
+            "require": {
+                "ext-bcmath": "*",
+                "ext-mbstring": "*",
+                "graphaware/neo4j-bolt": "^1.5",
+                "guzzlehttp/guzzle": "^6.0",
+                "myclabs/php-enum": "^1.4",
+                "php": ">= 5.6",
+                "symfony/event-dispatcher": "^2.7|^3.0"
+            },
+            "require-dev": {
+                "phpunit/phpunit": "4.*",
+                "symfony/stopwatch": "^3.0"
+            },
+            "type": "library",
+            "autoload": {
+                "psr-4": {
+                    "GraphAware\\Neo4j\\Client\\": "src/"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "Christophe Willemsen",
+                    "email": "christophe@graphaware.com"
+                }
+            ],
+            "description": "Neo4j-PHP-Client is the most advanced PHP Client for Neo4j",
+            "homepage": "http://graphaware.com",
+            "keywords": [
+                "bolt",
+                "client",
+                "cluster",
+                "database",
+                "graph",
+                "high-availibility",
+                "http",
+                "neo4j"
+            ],
+            "time": "2016-12-09 08:57:48"
+        },
+        {
             "name": "guzzlehttp/guzzle",
             "version": "6.2.2",
             "source": {
@@ -540,55 +689,6 @@
             "time": "2016-06-24 23:00:38"
         },
         {
-            "name": "heydavid713/neo4jphp",
-            "version": "0.1.2",
-            "source": {
-                "type": "git",
-                "url": "https://github.com/heydavid713/neo4jphp.git",
-                "reference": "30962925fb160a0efd7a021e4e5d0581404fac16"
-            },
-            "dist": {
-                "type": "zip",
-                "url": "https://api.github.com/repos/heydavid713/neo4jphp/zipball/30962925fb160a0efd7a021e4e5d0581404fac16",
-                "reference": "30962925fb160a0efd7a021e4e5d0581404fac16",
-                "shasum": ""
-            },
-            "require": {
-                "ext-curl": "*",
-                "php": ">=5.3.0"
-            },
-            "require-dev": {
-                "phing/phing": "2.6.*",
-                "phpunit/phpunit": "3.7.*",
-                "squizlabs/php_codesniffer": "1.5.*"
-            },
-            "type": "library",
-            "autoload": {
-                "psr-0": {
-                    "Everyman\\Neo4j": "lib/"
-                }
-            },
-            "notification-url": "https://packagist.org/downloads/",
-            "license": [
-                "MIT"
-            ],
-            "authors": [
-                {
-                    "name": "Josh Adell",
-                    "email": "josh.adell@gmail.com",
-                    "homepage": "http://joshadell.com"
-                }
-            ],
-            "description": "Wrapper for the Neo4j graph database REST interface",
-            "homepage": "http://github.com/jadell/neo4jphp/wiki",
-            "keywords": [
-                "database",
-                "graph",
-                "neo4j"
-            ],
-            "time": "2015-12-30 15:32:55"
-        },
-        {
             "name": "jakub-onderka/php-console-color",
             "version": "0.1",
             "source": {
@@ -677,20 +777,20 @@
         },
         {
             "name": "jeremeamia/SuperClosure",
-            "version": "2.2.0",
+            "version": "2.3.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/jeremeamia/super_closure.git",
-                "reference": "29a88be2a4846d27c1613aed0c9071dfad7b5938"
+                "reference": "443c3df3207f176a1b41576ee2a66968a507b3db"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/jeremeamia/super_closure/zipball/29a88be2a4846d27c1613aed0c9071dfad7b5938",
-                "reference": "29a88be2a4846d27c1613aed0c9071dfad7b5938",
+                "url": "https://api.github.com/repos/jeremeamia/super_closure/zipball/443c3df3207f176a1b41576ee2a66968a507b3db",
+                "reference": "443c3df3207f176a1b41576ee2a66968a507b3db",
                 "shasum": ""
             },
             "require": {
-                "nikic/php-parser": "^1.2|^2.0",
+                "nikic/php-parser": "^1.2|^2.0|^3.0",
                 "php": ">=5.4",
                 "symfony/polyfill-php56": "^1.0"
             },
@@ -700,7 +800,7 @@
             "type": "library",
             "extra": {
                 "branch-alias": {
-                    "dev-master": "2.2-dev"
+                    "dev-master": "2.3-dev"
                 }
             },
             "autoload": {
@@ -731,7 +831,7 @@
                 "serialize",
                 "tokenizer"
             ],
-            "time": "2015-12-05 17:17:57"
+            "time": "2016-12-07 09:37:55"
         },
         {
             "name": "laravel/framework",
@@ -1040,16 +1140,16 @@
         },
         {
             "name": "monolog/monolog",
-            "version": "1.21.0",
+            "version": "1.22.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/Seldaek/monolog.git",
-                "reference": "f42fbdfd53e306bda545845e4dbfd3e72edb4952"
+                "reference": "bad29cb8d18ab0315e6c477751418a82c850d558"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/Seldaek/monolog/zipball/f42fbdfd53e306bda545845e4dbfd3e72edb4952",
-                "reference": "f42fbdfd53e306bda545845e4dbfd3e72edb4952",
+                "url": "https://api.github.com/repos/Seldaek/monolog/zipball/bad29cb8d18ab0315e6c477751418a82c850d558",
+                "reference": "bad29cb8d18ab0315e6c477751418a82c850d558",
                 "shasum": ""
             },
             "require": {
@@ -1060,7 +1160,7 @@
                 "psr/log-implementation": "1.0.0"
             },
             "require-dev": {
-                "aws/aws-sdk-php": "^2.4.9",
+                "aws/aws-sdk-php": "^2.4.9 || ^3.0",
                 "doctrine/couchdb": "~1.0@dev",
                 "graylog2/gelf-php": "~1.0",
                 "jakub-onderka/php-parallel-lint": "0.9",
@@ -1114,7 +1214,7 @@
                 "logging",
                 "psr-3"
             ],
-            "time": "2016-07-29 03:23:52"
+            "time": "2016-11-26 00:15:39"
         },
         {
             "name": "mtdowling/cron-expression",
@@ -1159,6 +1259,50 @@
                 "schedule"
             ],
             "time": "2016-01-26 21:23:30"
+        },
+        {
+            "name": "myclabs/php-enum",
+            "version": "1.5.0",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/myclabs/php-enum.git",
+                "reference": "e42fa9d2ae5dd660dbd0fb573d94c61e5a0dbb02"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/myclabs/php-enum/zipball/e42fa9d2ae5dd660dbd0fb573d94c61e5a0dbb02",
+                "reference": "e42fa9d2ae5dd660dbd0fb573d94c61e5a0dbb02",
+                "shasum": ""
+            },
+            "require": {
+                "php": ">=5.3"
+            },
+            "require-dev": {
+                "phpunit/phpunit": "4.*",
+                "squizlabs/php_codesniffer": "1.*"
+            },
+            "type": "library",
+            "autoload": {
+                "psr-4": {
+                    "MyCLabs\\Enum\\": "src/"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "PHP Enum contributors",
+                    "homepage": "https://github.com/myclabs/php-enum/graphs/contributors"
+                }
+            ],
+            "description": "PHP Enum implementation",
+            "homepage": "http://github.com/myclabs/php-enum",
+            "keywords": [
+                "enum"
+            ],
+            "time": "2016-10-09 21:43:05"
         },
         {
             "name": "nesbot/carbon",
@@ -1536,16 +1680,16 @@
         },
         {
             "name": "swiftmailer/swiftmailer",
-            "version": "v5.4.3",
+            "version": "v5.4.4",
             "source": {
                 "type": "git",
                 "url": "https://github.com/swiftmailer/swiftmailer.git",
-                "reference": "4cc92842069c2bbc1f28daaaf1d2576ec4dfe153"
+                "reference": "545ce9136690cea74f98f86fbb9c92dd9ab1a756"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/swiftmailer/swiftmailer/zipball/4cc92842069c2bbc1f28daaaf1d2576ec4dfe153",
-                "reference": "4cc92842069c2bbc1f28daaaf1d2576ec4dfe153",
+                "url": "https://api.github.com/repos/swiftmailer/swiftmailer/zipball/545ce9136690cea74f98f86fbb9c92dd9ab1a756",
+                "reference": "545ce9136690cea74f98f86fbb9c92dd9ab1a756",
                 "shasum": ""
             },
             "require": {
@@ -1585,20 +1729,20 @@
                 "mail",
                 "mailer"
             ],
-            "time": "2016-07-08 11:51:25"
+            "time": "2016-11-24 01:01:23"
         },
         {
             "name": "symfony/browser-kit",
-            "version": "v3.1.6",
+            "version": "v3.2.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/symfony/browser-kit.git",
-                "reference": "901319a31c9b3cee7857b4aeeb81b5d64dfa34fc"
+                "reference": "34348c2691ce6254e8e008026f4c5e72c22bb318"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/symfony/browser-kit/zipball/901319a31c9b3cee7857b4aeeb81b5d64dfa34fc",
-                "reference": "901319a31c9b3cee7857b4aeeb81b5d64dfa34fc",
+                "url": "https://api.github.com/repos/symfony/browser-kit/zipball/34348c2691ce6254e8e008026f4c5e72c22bb318",
+                "reference": "34348c2691ce6254e8e008026f4c5e72c22bb318",
                 "shasum": ""
             },
             "require": {
@@ -1615,7 +1759,7 @@
             "type": "library",
             "extra": {
                 "branch-alias": {
-                    "dev-master": "3.1-dev"
+                    "dev-master": "3.2-dev"
                 }
             },
             "autoload": {
@@ -1642,7 +1786,7 @@
             ],
             "description": "Symfony BrowserKit Component",
             "homepage": "https://symfony.com",
-            "time": "2016-09-06 11:02:40"
+            "time": "2016-10-13 13:35:11"
         },
         {
             "name": "symfony/console",
@@ -1872,16 +2016,16 @@
         },
         {
             "name": "symfony/event-dispatcher",
-            "version": "v3.1.6",
+            "version": "v3.2.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/symfony/event-dispatcher.git",
-                "reference": "28b0832b2553ffb80cabef6a7a812ff1e670c0bc"
+                "reference": "e8f47a327c2f0fd5aa04fa60af2b693006ed7283"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/symfony/event-dispatcher/zipball/28b0832b2553ffb80cabef6a7a812ff1e670c0bc",
-                "reference": "28b0832b2553ffb80cabef6a7a812ff1e670c0bc",
+                "url": "https://api.github.com/repos/symfony/event-dispatcher/zipball/e8f47a327c2f0fd5aa04fa60af2b693006ed7283",
+                "reference": "e8f47a327c2f0fd5aa04fa60af2b693006ed7283",
                 "shasum": ""
             },
             "require": {
@@ -1901,7 +2045,7 @@
             "type": "library",
             "extra": {
                 "branch-alias": {
-                    "dev-master": "3.1-dev"
+                    "dev-master": "3.2-dev"
                 }
             },
             "autoload": {
@@ -1928,7 +2072,7 @@
             ],
             "description": "Symfony EventDispatcher Component",
             "homepage": "https://symfony.com",
-            "time": "2016-10-13 06:28:43"
+            "time": "2016-10-13 06:29:04"
         },
         {
             "name": "symfony/finder",
@@ -2533,61 +2677,6 @@
             "time": "2016-07-26 08:03:56"
         },
         {
-            "name": "vinelab/neoeloquent",
-            "version": "v1.3.2",
-            "source": {
-                "type": "git",
-                "url": "https://github.com/Vinelab/NeoEloquent.git",
-                "reference": "7fce820f9c26194f694354c3be9fb4f970f64b60"
-            },
-            "dist": {
-                "type": "zip",
-                "url": "https://api.github.com/repos/Vinelab/NeoEloquent/zipball/7fce820f9c26194f694354c3be9fb4f970f64b60",
-                "reference": "7fce820f9c26194f694354c3be9fb4f970f64b60",
-                "shasum": ""
-            },
-            "require": {
-                "heydavid713/neo4jphp": "0.1.*",
-                "illuminate/database": "5.2.*",
-                "illuminate/pagination": "5.2.*",
-                "illuminate/support": "5.2.*",
-                "nesbot/carbon": "~1.0",
-                "php": ">=5.4.0"
-            },
-            "require-dev": {
-                "mockery/mockery": "0.9.*",
-                "phpunit/phpunit": "4.2.*"
-            },
-            "type": "library",
-            "autoload": {
-                "classmap": [
-                    "tests/TestCase.php"
-                ],
-                "psr-0": {
-                    "Vinelab\\NeoEloquent\\": "src/"
-                }
-            },
-            "notification-url": "https://packagist.org/downloads/",
-            "license": [
-                "MIT"
-            ],
-            "authors": [
-                {
-                    "name": "Abed Halawi",
-                    "email": "abed.halawi@vinelab.com"
-                }
-            ],
-            "description": "Laravel wrapper for the Neo4j graph database REST interface",
-            "keywords": [
-                "database",
-                "graph",
-                "laravel",
-                "neo4j",
-                "neoeloquent"
-            ],
-            "time": "2016-05-20 08:53:27"
-        },
-        {
             "name": "vlucas/phpdotenv",
             "version": "v2.4.0",
             "source": {
@@ -2952,16 +3041,16 @@
         },
         {
             "name": "phpdocumentor/type-resolver",
-            "version": "0.2",
+            "version": "0.2.1",
             "source": {
                 "type": "git",
                 "url": "https://github.com/phpDocumentor/TypeResolver.git",
-                "reference": "b39c7a5b194f9ed7bd0dd345c751007a41862443"
+                "reference": "e224fb2ea2fba6d3ad6fdaef91cd09a172155ccb"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/phpDocumentor/TypeResolver/zipball/b39c7a5b194f9ed7bd0dd345c751007a41862443",
-                "reference": "b39c7a5b194f9ed7bd0dd345c751007a41862443",
+                "url": "https://api.github.com/repos/phpDocumentor/TypeResolver/zipball/e224fb2ea2fba6d3ad6fdaef91cd09a172155ccb",
+                "reference": "e224fb2ea2fba6d3ad6fdaef91cd09a172155ccb",
                 "shasum": ""
             },
             "require": {
@@ -2995,20 +3084,20 @@
                     "email": "me@mikevanriel.com"
                 }
             ],
-            "time": "2016-06-10 07:14:17"
+            "time": "2016-11-25 06:54:22"
         },
         {
             "name": "phpspec/prophecy",
-            "version": "v1.6.1",
+            "version": "v1.6.2",
             "source": {
                 "type": "git",
                 "url": "https://github.com/phpspec/prophecy.git",
-                "reference": "58a8137754bc24b25740d4281399a4a3596058e0"
+                "reference": "6c52c2722f8460122f96f86346600e1077ce22cb"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/phpspec/prophecy/zipball/58a8137754bc24b25740d4281399a4a3596058e0",
-                "reference": "58a8137754bc24b25740d4281399a4a3596058e0",
+                "url": "https://api.github.com/repos/phpspec/prophecy/zipball/6c52c2722f8460122f96f86346600e1077ce22cb",
+                "reference": "6c52c2722f8460122f96f86346600e1077ce22cb",
                 "shasum": ""
             },
             "require": {
@@ -3016,10 +3105,11 @@
                 "php": "^5.3|^7.0",
                 "phpdocumentor/reflection-docblock": "^2.0|^3.0.2",
                 "sebastian/comparator": "^1.1",
-                "sebastian/recursion-context": "^1.0"
+                "sebastian/recursion-context": "^1.0|^2.0"
             },
             "require-dev": {
-                "phpspec/phpspec": "^2.0"
+                "phpspec/phpspec": "^2.0",
+                "phpunit/phpunit": "^4.8 || ^5.6.5"
             },
             "type": "library",
             "extra": {
@@ -3057,7 +3147,7 @@
                 "spy",
                 "stub"
             ],
-            "time": "2016-06-07 08:13:47"
+            "time": "2016-11-21 14:58:47"
         },
         {
             "name": "phpunit/php-code-coverage",
@@ -3123,16 +3213,16 @@
         },
         {
             "name": "phpunit/php-file-iterator",
-            "version": "1.4.1",
+            "version": "1.4.2",
             "source": {
                 "type": "git",
                 "url": "https://github.com/sebastianbergmann/php-file-iterator.git",
-                "reference": "6150bf2c35d3fc379e50c7602b75caceaa39dbf0"
+                "reference": "3cc8f69b3028d0f96a9078e6295d86e9bf019be5"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/sebastianbergmann/php-file-iterator/zipball/6150bf2c35d3fc379e50c7602b75caceaa39dbf0",
-                "reference": "6150bf2c35d3fc379e50c7602b75caceaa39dbf0",
+                "url": "https://api.github.com/repos/sebastianbergmann/php-file-iterator/zipball/3cc8f69b3028d0f96a9078e6295d86e9bf019be5",
+                "reference": "3cc8f69b3028d0f96a9078e6295d86e9bf019be5",
                 "shasum": ""
             },
             "require": {
@@ -3166,7 +3256,7 @@
                 "filesystem",
                 "iterator"
             ],
-            "time": "2015-06-21 13:08:43"
+            "time": "2016-10-03 07:40:28"
         },
         {
             "name": "phpunit/php-text-template",
@@ -3304,16 +3394,16 @@
         },
         {
             "name": "phpunit/phpunit",
-            "version": "4.8.28",
+            "version": "4.8.31",
             "source": {
                 "type": "git",
                 "url": "https://github.com/sebastianbergmann/phpunit.git",
-                "reference": "558a3a0d28b4cb7e4a593a4fbd2220e787076225"
+                "reference": "98b2b39a520766bec663ff5b7ff1b729db9dbfe3"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/sebastianbergmann/phpunit/zipball/558a3a0d28b4cb7e4a593a4fbd2220e787076225",
-                "reference": "558a3a0d28b4cb7e4a593a4fbd2220e787076225",
+                "url": "https://api.github.com/repos/sebastianbergmann/phpunit/zipball/98b2b39a520766bec663ff5b7ff1b729db9dbfe3",
+                "reference": "98b2b39a520766bec663ff5b7ff1b729db9dbfe3",
                 "shasum": ""
             },
             "require": {
@@ -3329,7 +3419,7 @@
                 "phpunit/php-text-template": "~1.2",
                 "phpunit/php-timer": "^1.0.6",
                 "phpunit/phpunit-mock-objects": "~2.3",
-                "sebastian/comparator": "~1.1",
+                "sebastian/comparator": "~1.2.2",
                 "sebastian/diff": "~1.2",
                 "sebastian/environment": "~1.3",
                 "sebastian/exporter": "~1.2",
@@ -3372,7 +3462,7 @@
                 "testing",
                 "xunit"
             ],
-            "time": "2016-11-14 06:25:28"
+            "time": "2016-12-09 02:45:31"
         },
         {
             "name": "phpunit/phpunit-mock-objects",
@@ -3804,25 +3894,31 @@
         },
         {
             "name": "symfony/yaml",
-            "version": "v3.1.6",
+            "version": "v3.2.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/symfony/yaml.git",
-                "reference": "7ff51b06c6c3d5cc6686df69004a42c69df09e27"
+                "reference": "f2300ba8fbb002c028710b92e1906e7457410693"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/symfony/yaml/zipball/7ff51b06c6c3d5cc6686df69004a42c69df09e27",
-                "reference": "7ff51b06c6c3d5cc6686df69004a42c69df09e27",
+                "url": "https://api.github.com/repos/symfony/yaml/zipball/f2300ba8fbb002c028710b92e1906e7457410693",
+                "reference": "f2300ba8fbb002c028710b92e1906e7457410693",
                 "shasum": ""
             },
             "require": {
                 "php": ">=5.5.9"
             },
+            "require-dev": {
+                "symfony/console": "~2.8|~3.0"
+            },
+            "suggest": {
+                "symfony/console": "For validating YAML files using the lint command"
+            },
             "type": "library",
             "extra": {
                 "branch-alias": {
-                    "dev-master": "3.1-dev"
+                    "dev-master": "3.2-dev"
                 }
             },
             "autoload": {
@@ -3849,24 +3945,24 @@
             ],
             "description": "Symfony Yaml Component",
             "homepage": "https://symfony.com",
-            "time": "2016-10-24 18:41:13"
+            "time": "2016-11-18 21:17:59"
         },
         {
             "name": "webmozart/assert",
-            "version": "1.1.0",
+            "version": "1.2.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/webmozart/assert.git",
-                "reference": "bb2d123231c095735130cc8f6d31385a44c7b308"
+                "reference": "2db61e59ff05fe5126d152bd0655c9ea113e550f"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/webmozart/assert/zipball/bb2d123231c095735130cc8f6d31385a44c7b308",
-                "reference": "bb2d123231c095735130cc8f6d31385a44c7b308",
+                "url": "https://api.github.com/repos/webmozart/assert/zipball/2db61e59ff05fe5126d152bd0655c9ea113e550f",
+                "reference": "2db61e59ff05fe5126d152bd0655c9ea113e550f",
                 "shasum": ""
             },
             "require": {
-                "php": "^5.3.3|^7.0"
+                "php": "^5.3.3 || ^7.0"
             },
             "require-dev": {
                 "phpunit/phpunit": "^4.6",
@@ -3875,7 +3971,7 @@
             "type": "library",
             "extra": {
                 "branch-alias": {
-                    "dev-master": "1.2-dev"
+                    "dev-master": "1.3-dev"
                 }
             },
             "autoload": {
@@ -3899,7 +3995,7 @@
                 "check",
                 "validate"
             ],
-            "time": "2016-08-09 15:02:57"
+            "time": "2016-11-23 20:04:58"
         }
     ],
     "aliases": [],

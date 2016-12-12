@@ -14,16 +14,21 @@ use Underscore\Types\Arrays;
 class BitcoinTransactionModel extends BaseBitcoinModel
 {
     /**
+     * Název node, jak je uložen v databázi
+     */
+    const NODE_NAME="transaction";
+
+
+    /**
      * Konstanty pre identifikaciu vstupov a vystupov.
      */
     const   INPUTS_OUTPUTS_TYPE_INPUT = 1,
             INPUTS_OUTPUTS_TYPE_OUTPUT = 2;
 
-    /**
-     * Identifikator kolekcie.
-     * @var string
-     */
-    public static $collection = 'transactions';
+    protected function getNodeName()
+    {
+        return self::NODE_NAME;
+    }
 
     /**
      * Overenie existencie transakcie podla TxId.

@@ -26,7 +26,6 @@ class AddressController extends Controller
      */
     public function findOne($currency, $address)
     {
-
         $limit = 50;
         view()->composer('transaction.transactionListItem', function($view) use($currency) {
             $view->with('currency', $currency);

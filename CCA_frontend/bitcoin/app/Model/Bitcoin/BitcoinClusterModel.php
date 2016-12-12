@@ -13,7 +13,11 @@ use Underscore\Types\Arrays;
  */
 class BitcoinClusterModel extends BaseBitcoinModel
 {
-    public static $collection = 'clusters';
+    /**
+     * Název node, jak je uložen v databázi
+     */
+    const NODE_NAME="cluster";
+
     /**
      * Identifikator zhluku adries.
      * @var \MongoId
@@ -41,6 +45,12 @@ class BitcoinClusterModel extends BaseBitcoinModel
         $this->cluster = $cluster;
         $this->setClusterModel();
     }
+
+    protected function getNodeName()
+    {
+        return self::NODE_NAME;
+    }
+
 
     protected function setClusterModel()
     {
