@@ -61,7 +61,9 @@ class BitcoinAddressModel extends BaseBitcoinModel
     {
         parent::__construct();
         $this->address      = $address;
-        $this->init();
+        if ($address != null) {
+            $this->init();
+        }
     }
 
     /**
@@ -94,7 +96,7 @@ class BitcoinAddressModel extends BaseBitcoinModel
      */
     protected function setAddressModel()
     {
-        $this->addressModel = $this->collection()->findOne($this->getFindByAddressCodnitions());
+        $this->addressModel = $this->getNodeByAddress();
     }
 
     /**
@@ -156,6 +158,11 @@ class BitcoinAddressModel extends BaseBitcoinModel
             ]
         ]);
         $this->balanceChanged = true;
+    }
+
+    protected function getNodeByAddress()
+    {
+        return $this->find("address",$this->address,1);
     }
 
     /**

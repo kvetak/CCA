@@ -70,12 +70,13 @@ class BitcoinBlockModel extends BaseBitcoinModel implements \ArrayAccess
      */
     protected function setModel()
     {
-        if( ! empty($this->getHeight()) || ! empty($this->getHash())){
-            $this->blockModel = $this->collection()->findOne(
-                [
-                    '$or'   => $this->getFindConditions(),
-                ]
-            );
+        if (!empty($this->getHeight()))
+        {
+            $this->blockModel = $this->find("height",$this->getHeight(),1);
+        }
+        elseif (!empty($this->getHash()))
+        {
+            $this->blockModel = $this->find("hash",$this->getHash(),1);
         }
     }
     /**
@@ -121,7 +122,7 @@ class BitcoinBlockModel extends BaseBitcoinModel implements \ArrayAccess
      */
     public function getLastBlock()
     {
-        return $this->collection()->find()->sort(['$natural'=>-1])->limit(1)->getNext();
+        return $this->findFirst(null,false);
     }
 
     /**

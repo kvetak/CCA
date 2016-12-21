@@ -29,6 +29,8 @@ class Kernel extends ConsoleKernel
     protected $commands = [
          Commands\DownloadTags::class,
          Commands\DownloadBlocks::class,
+         Commands\Inspire::class,
+         Commands\ParseBlocks::class
     ];
 
     /**

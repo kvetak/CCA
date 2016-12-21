@@ -43,12 +43,12 @@ class BlockController extends Controller
         $block          = new $blockModelClass($hash);
 
         $lastBlock                  = $block->getLastBlock();
-        $isBlockConfirmed           = $blockModelClass::isConfirmed($block['height'], $lastBlock['height']);
+        $isBlockConfirmed           = $blockModelClass->isConfirmed($block['height'], $lastBlock['height']);
         $blockConfirmationMessage   = $isBlockConfirmed ? 'Transactions in block are confirmed!' : 'Transactions in block are not confirmed!';
         $confirmations              = $lastBlock['height'] - $block['height'];
         $pagination = new LengthAwarePaginator([], (int)$block['transactions'], self::TRANSACTIONS_PER_PAGE);
         $skip = ($pagination->currentPage() - 1) * self::TRANSACTIONS_PER_PAGE;
-        $transactions               = $transactionModelClass::findByBlockHash($hash, self::TRANSACTIONS_PER_PAGE, $skip);
+        $transactions               = $transactionModelClass->findByBlockHash($hash, self::TRANSACTIONS_PER_PAGE, $skip);
         $pagination->setPath(route('block_findone',['hash'=>$block['hash'], 'currency' => 'bitcoin']));
 
         view()->composer('transaction.transactionListItem', function($view) use($currency) {

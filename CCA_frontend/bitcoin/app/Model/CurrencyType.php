@@ -1,11 +1,22 @@
 <?php
 namespace App\Model;
 
+use App\Model\Bitcoin\BitcoinAddressModel;
+use App\Model\Bitcoin\BitcoinBlockModel;
+use App\Model\Bitcoin\BitcoinClusterModel;
+use App\Model\Bitcoin\BitcoinTransactionModel;
+use App\Model\Litecoin\LitecoinAddressModel;
+use App\Model\Litecoin\LitecoinBlockModel;
+use App\Model\Litecoin\LitecoinClusterModel;
+use App\Model\Litecoin\LitecoinTransactionModel;
 use Underscore\Types\Arrays;
 
-class CurrencyType{
+abstract class CurrencyType{
     const BITCOIN = 1;
     const LITECOIN = 2;
+
+
+    private static $initiated=false;
 
     protected static $enabledCurrencies = [
         self::BITCOIN,
@@ -22,52 +33,96 @@ class CurrencyType{
         self::LITECOIN  => 'LTC',
     ];
 
-    protected static $blockModels = [
-        CurrencyType::BITCOIN   => 'App\Model\Bitcoin\BitcoinBlockModel',
-        CurrencyType::LITECOIN  => 'App\Model\Litecoin\LitecoinBlockModel',
-    ];
+    protected static $blockModels;
+    protected static $addressModels;
+    protected static $transactionModels;
+    protected static $clusterModels;
 
-    protected static $addressModels = [
-        CurrencyType::BITCOIN   => 'App\Model\Bitcoin\BitcoinAddressModel',
-        CurrencyType::LITECOIN  => 'App\Model\Litecoin\LitecoinAddressModel',
-    ];
+    private static function init()
+    {
+        self::$blockModels = [
+            CurrencyType::BITCOIN   => new BitcoinBlockModel(),
+            CurrencyType::LITECOIN  => new LitecoinBlockModel(),
+        ];
 
-    protected static $transactionModels = [
-        CurrencyType::BITCOIN   => 'App\Model\Bitcoin\BitcoinTransactionModel',
-        CurrencyType::LITECOIN  =>  'App\Model\Litecoin\LitecoinTransactionModel',
-    ];
+        self::$addressModels = [
+            CurrencyType::BITCOIN   => new BitcoinAddressModel(),
+            CurrencyType::LITECOIN  => new LitecoinAddressModel(),
+        ];
 
-    protected static $clusterModels = [
-        CurrencyType::BITCOIN   => 'App\Model\Bitcoin\BitcoinClusterModel',
-        CurrencyType::LITECOIN  => 'App\Model\Litecoin\LitecoinClusterModel',
-    ];
+        self::$transactionModels = [
+            CurrencyType::BITCOIN   =>  new BitcoinTransactionModel(),
+            CurrencyType::LITECOIN  =>  new LitecoinTransactionModel(),
+        ];
 
+        self::$clusterModels = [
+            CurrencyType::BITCOIN   => new BitcoinClusterModel(),
+            CurrencyType::LITECOIN  => new LitecoinClusterModel(),
+        ];
+
+        self::$initiated=true;
+    }
+
+
+    /**
+     * @param $currencyType
+     * @return BitcoinBlockModel
+     */
     public static function blockModel($currencyType)
     {
+        if (!self::$initiated){
+            self::init();
+        }
+
         if( ! is_int($currencyType)){
             $currencyType = self::fromStr($currencyType);
         }
-        return Arrays::get(self::$blockModels, $currencyType);
+        return self::$blockModels[$currencyType];
     }
 
+    /**
+     * @param $currencyType
+     * @return BitcoinAddressModel
+     */
     public static function addressModel($currencyType)
     {
+        if (!self::$initiated){
+            self::init();
+        }
+
         if( ! is_int($currencyType)){
             $currencyType = self::fromStr($currencyType);
         }
         return Arrays::get(self::$addressModels, $currencyType);
     }
 
+    /**
+     * @param $currencyType
+     * @return BitcoinTransactionModel
+     */
     public static function transactionModel($currencyType)
     {
+        if (!self::$initiated){
+            self::init();
+        }
+
+
         if( ! is_int($currencyType)){
             $currencyType = self::fromStr($currencyType);
         }
         return Arrays::get(self::$transactionModels, $currencyType);
     }
 
+    /**
+     * @param $currencyType
+     * @return BitcoinClusterModel
+     */
     public static function clusterModel($currencyType)
     {
+        if (!self::$initiated){
+            self::init();
+        }
+
         if( ! is_int($currencyType)){
             $currencyType = self::fromStr($currencyType);
         }
@@ -107,6 +162,5 @@ class CurrencyType{
         }
         return Arrays::get(self::$currenciesNames, $currencyType);
     }
-
 }
 

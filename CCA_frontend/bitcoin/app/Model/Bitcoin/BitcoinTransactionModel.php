@@ -35,7 +35,7 @@ class BitcoinTransactionModel extends BaseBitcoinModel
      * @param $txId - txId transakcie
      * @return bool
      */
-    public static function existsByTxId($txId)
+    public function existsByTxId($txId)
     {
         $c      = get_called_class();
         $model  = new $c;
@@ -48,7 +48,7 @@ class BitcoinTransactionModel extends BaseBitcoinModel
      * @param array $fields
      * @return array|null
      */
-    public static function findByTxId($txId, $fields = [])
+    public function findByTxId($txId, $fields = [])
     {
         $c      = get_called_class();
         $model  = new $c;
@@ -62,11 +62,11 @@ class BitcoinTransactionModel extends BaseBitcoinModel
      * @param int $skip        - pocet prvkov, ktore maju z pociatku vystupu preskocene
      * @return \MongoCursor
      */
-    public static function findByBlockHash($blockHash, $limit = 0, $skip = 0)
+    public function findByBlockHash($blockHash, $limit = 0, $skip = 0)
     {
-        $c      = get_called_class();
-        $model  = new $c;
-        $data   =  $model->collection()->find(["blockhash" => $blockHash],[
+        return $this->find("blockhash",$blockHash,$limit,$skip);
+
+        /*$data   =  $model->collection()->find(["blockhash" => $blockHash],[
             'time' => true,
             'sumOfOutputs' => true,
             'txid'          => true,
@@ -75,7 +75,7 @@ class BitcoinTransactionModel extends BaseBitcoinModel
             return $data->limit($limit)->skip($skip);
         }else{
             return $data;
-        }
+        }*/
     }
 
     /**

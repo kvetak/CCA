@@ -43,7 +43,11 @@ class BitcoinClusterModel extends BaseBitcoinModel
     {
         parent::__construct();
         $this->cluster = $cluster;
-        $this->setClusterModel();
+
+        if ($cluster != null)
+        {
+            $this->setClusterModel();
+        }
     }
 
     protected function getNodeName()
@@ -54,9 +58,7 @@ class BitcoinClusterModel extends BaseBitcoinModel
 
     protected function setClusterModel()
     {
-        $this->clusterModel =  $this->collection()->findOne([
-            '_id' => $this->getCluster(),
-        ]);
+        $this->clusterModel =  $this->find("_id",$this->getCluster(),1);
     }
 
     /**
