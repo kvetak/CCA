@@ -1,7 +1,8 @@
 <?php
 namespace App\Model\Bitcoin;
-use Illuminate\Support\Arr;
-use Underscore\Types\Arrays;
+use App\Model\Bitcoin\Dto\BitcoinTransactionDto;
+use App\Model\Bitcoin\Dto\BitcoinTransactionOutputDto;
+use App\Model\Exceptions\TransactionNotFoundException;
 
 /**
  * Praca s transakciami.
@@ -18,6 +19,16 @@ class BitcoinTransactionModel extends BaseBitcoinModel
      */
     const NODE_NAME="transaction";
 
+    const DB_TRANS_TXID="txid",
+        DB_TRANS_BLOCKHAHS="blockhash",
+        DB_TRANS_TIME="time",
+        DB_TRANS_INPUTS="inputs",
+        DB_TRANS_OUTPUTS="outputs",
+        DB_TRANS_BLOCKTIME="blocktime",
+        DB_TRANS_SUM_OF_INPUTS="sum_of_inputs",
+        DB_TRANS_SUM_OF_OUTPUTS="sum_of_outputs",
+        DB_TRANS_SUM_OF_FEES="sum_of_fees",
+        DB_TRANS_UNIQUE_INPUTS="unique_inputs";
 
     /**
      * Konstanty pre identifikaciu vstupov a vystupov.
@@ -30,6 +41,63 @@ class BitcoinTransactionModel extends BaseBitcoinModel
         return self::NODE_NAME;
     }
 
+
+    private function dto_to_array(BitcoinTransactionDto $dto)
+    {
+        $array=array();
+
+        $array[self::DB_TRANS_TXID]=$dto->getTxid();
+        $array[self::DB_TRANS_BLOCKHAHS]=$dto->getBlockhash();
+        $array[self::DB_TRANS_TIME]=$dto->getTime();
+        $array[self::DB_TRANS_INPUTS]=json_encode($dto->getInputs());
+        $array[self::DB_TRANS_OUTPUTS]=json_encode($dto->getOutputs());
+        $array[self::DB_TRANS_BLOCKTIME]=$dto->getBlocktime();
+        $array[self::DB_TRANS_SUM_OF_INPUTS]=$dto->getSumOfInputs();
+        $array[self::DB_TRANS_SUM_OF_OUTPUTS]=$dto->getSumOfOutputs();
+        $array[self::DB_TRANS_SUM_OF_FEES]=$dto->getSumOfFees();
+        $array[self::DB_TRANS_UNIQUE_INPUTS]=$dto->getUniqueInputs();
+
+        return $array;
+    }
+
+    private function array_to_dto(array $array)
+    {
+        $dto = new BitcoinTransactionDto();
+
+        $dto->setTxid($array[self::DB_TRANS_TXID]);
+        $dto->setBlockhash($array[self::DB_TRANS_BLOCKHAHS]);
+        $dto->setTime($array[self::DB_TRANS_TIME]);
+        $dto->setInputs(json_decode($array[self::DB_TRANS_INPUTS]));
+        $dto->setOutputs(json_decode($array[self::DB_TRANS_OUTPUTS]));
+        $dto->setBlocktime($array[self::DB_TRANS_BLOCKTIME]);
+        $dto->setSumOfInputs($array[self::DB_TRANS_SUM_OF_INPUTS]);
+        $dto->setSumOfOutputs($array[self::DB_TRANS_SUM_OF_OUTPUTS]);
+        $dto->setSumOfFees($array[self::DB_TRANS_SUM_OF_FEES]);
+        $dto->setUniqueInputs($array[self::DB_TRANS_UNIQUE_INPUTS]);
+
+        return $dto;
+    }
+
+
+    /**
+     * Uloží uzel do databáze
+     *
+     * @param BitcoinTransactionDto $dto
+     */
+    public function storeNode(BitcoinTransactionDto $dto)
+    {
+        $values=$this->dto_to_array($dto);
+        $this->insert($values);
+    }
+
+    /**
+     * Smaže všechny bloky z databáze
+     */
+    public function deleteAllNodes()
+    {
+        $this->deleteAll();
+    }
+
     /**
      * Overenie existencie transakcie podla TxId.
      * @param $txId - txId transakcie
@@ -37,22 +105,54 @@ class BitcoinTransactionModel extends BaseBitcoinModel
      */
     public function existsByTxId($txId)
     {
-        $c      = get_called_class();
-        $model  = new $c;
-        return ! empty($model->collection()->findOne(['txid' => $txId],['_id'=>true]));
+       $result = $this->findOne(self::DB_TRANS_TXID,$txId);
+       return count($result) > 0;
     }
 
     /**
      * Vyhladanie transakcie podla TxId.
      * @param $txId           - txId transakcie
-     * @param array $fields
-     * @return array|null
+     * @return BitcoinTransactionDto
+     * @throws TransactionNotFoundException
      */
     public function findByTxId($txId, $fields = [])
     {
-        $c      = get_called_class();
-        $model  = new $c;
-        return $model->collection()->findOne(['txid' => $txId], $fields);
+        $data = $this->findOne(self::DB_TRANS_TXID,$txId);
+        if (count($data) == 0)
+        {
+            throw new TransactionNotFoundException("Not found block with hash ".$txId);
+        }
+        return $this->array_to_dto($data);
+    }
+
+    /**
+     * Najde výstup transakce podle jejího ID a čísla výstupu
+     * @param $txid - ID transakce (hash)
+     * @param $n - číslo výstupní transakce
+     * @return BitcoinTransactionOutputDto
+     */
+    public function findTransactionOutput($txid, $n)
+    {
+        $transaction=$this->findByTxId($txid);
+        return $transaction->getOutputs()[$n];
+    }
+
+    /**
+     * Aktualizace výstupu transakce
+     * @param $txid
+     * @param $n
+     * @param BitcoinTransactionOutputDto $outputDto
+     */
+    public function updateTransactionOutput($txid,$n, BitcoinTransactionOutputDto $outputDto)
+    {
+        $transaction=$this->findByTxId($txid);
+        $outputs=$transaction->getOutputs();
+        $outputs[$n]=$outputDto;
+        $this->update(self::DB_TRANS_TXID,$txid,
+            array(
+                self::DB_TRANS_OUTPUTS => $outputs
+            )
+        );
     }
 
     /**
@@ -60,22 +160,17 @@ class BitcoinTransactionModel extends BaseBitcoinModel
      * @param $blockHash       - hash bloku
      * @param int $limit       - maximalny pocet vratenych zaznamov
      * @param int $skip        - pocet prvkov, ktore maju z pociatku vystupu preskocene
-     * @return \MongoCursor
+     * @return array<BitcoinTransactionDto>
      */
     public function findByBlockHash($blockHash, $limit = 0, $skip = 0)
     {
-        return $this->find("blockhash",$blockHash,$limit,$skip);
-
-        /*$data   =  $model->collection()->find(["blockhash" => $blockHash],[
-            'time' => true,
-            'sumOfOutputs' => true,
-            'txid'          => true,
-        ]);
-        if($limit && $skip ){
-            return $data->limit($limit)->skip($skip);
-        }else{
-            return $data;
-        }*/
+        $data=$this->find(self::DB_TRANS_BLOCKHAHS,$blockHash,$limit,$skip);
+        $result=array();
+        foreach ($data as $transaction)
+        {
+            $result[]=$this->array_to_dto($transaction);
+        }
+        return $result;
     }
 
     /**

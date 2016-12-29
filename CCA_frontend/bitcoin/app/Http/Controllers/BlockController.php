@@ -38,18 +38,19 @@ class BlockController extends Controller
     public function findOne($currency, $hash)
     {
         $displayOnlyHeader      = True;
-        $blockModelClass        = CurrencyType::blockModel($currency);
+        $blockModel       = CurrencyType::blockModel($currency);
         $transactionModelClass  = CurrencyType::transactionModel($currency);
-        $block          = new $blockModelClass($hash);
 
-        $lastBlock                  = $block->getLastBlock();
-        $isBlockConfirmed           = $blockModelClass->isConfirmed($block['height'], $lastBlock['height']);
+        $block= $blockModel->findByHash($hash);
+
+        $lastBlock                  = $blockModel->getLastBlock();
+        $isBlockConfirmed           = $blockModel->isConfirmed($block->getHeight(), $lastBlock->getHeight());
         $blockConfirmationMessage   = $isBlockConfirmed ? 'Transactions in block are confirmed!' : 'Transactions in block are not confirmed!';
-        $confirmations              = $lastBlock['height'] - $block['height'];
-        $pagination = new LengthAwarePaginator([], (int)$block['transactions'], self::TRANSACTIONS_PER_PAGE);
+        $confirmations              = $lastBlock->getHeight() - $block->getHeight();
+        $pagination = new LengthAwarePaginator([], $block->getTransactionsCount(), self::TRANSACTIONS_PER_PAGE);
         $skip = ($pagination->currentPage() - 1) * self::TRANSACTIONS_PER_PAGE;
         $transactions               = $transactionModelClass->findByBlockHash($hash, self::TRANSACTIONS_PER_PAGE, $skip);
-        $pagination->setPath(route('block_findone',['hash'=>$block['hash'], 'currency' => 'bitcoin']));
+        $pagination->setPath(route('block_findone',['hash'=>$block->getHash(), 'currency' => 'bitcoin']));
 
         view()->composer('transaction.transactionListItem', function($view) use($currency) {
             $view->with('currency', $currency);
@@ -64,13 +65,12 @@ class BlockController extends Controller
      */
     public function findAll($currency = "bitcoin")
     {
-        $blockModelClass = CurrencyType::blockModel($currency);
-        $blockM          = new $blockModelClass();
-        $total      = $blockM->getCount();
+        $blockModel = CurrencyType::blockModel($currency);
+        $total      = $blockModel->getCount();
         $this->setPaginator(new LengthAwarePaginator([], $total,self::LIMIT_PER_PAGE));
         $this->paginator->setPath('block');
         $skip       = ($this->currentPage() - 1) * self::LIMIT_PER_PAGE;
-        $blocks     = $blockM->findAll(self::LIMIT_PER_PAGE, $skip, [
+        $blocks     = $blockModel->findAll(self::LIMIT_PER_PAGE, $skip, [
             'height'            => true,
             'hash'              => true,
             'time'              => true,

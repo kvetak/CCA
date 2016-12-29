@@ -4,14 +4,14 @@
 @extends('layout')
 @section('content')
     <div class="page-header">
-        <h1>{{CurrencyType::currencyTitle($currency)}} block: <small>{{$block['hash']}}</small></h1>
+        <h1>{{CurrencyType::currencyTitle($currency)}} block: <small>{{$block->getHash()}}</small></h1>
         <div class="alert {{$isBlockConfirmed ? 'alert-success' : 'alert-danger'}}" role="alert">{{$blockConfirmationMessage}}</div>
     </div>
     <div class="row vertical-align">
     <div class="col-md-2">
         <nav>
             <ul class="pager">
-                <li class="previous"><a href="{!! route('block_findone', ['hash' => $block['previousblockhash'], 'currency' => $currency]) !!}"><span aria-hidden="true">&larr;</span> Previous block</a></li>
+                <li class="previous"><a href="{!! route('block_findone', ['hash' => $block->getPreviousBlockHash(), 'currency' => $currency]) !!}"><span aria-hidden="true">&larr;</span> Previous block</a></li>
             </ul>
         </nav>
     </div>
@@ -20,39 +20,39 @@
             <caption>Summary</caption>
             <tr>
                 <td><strong>Hash</strong></td>
-                <td><small>{{$block['hash']}}</small></td>
+                <td><small>{{$block->getHash()}}</small></td>
             </tr>
             <tr>
                 <td><strong>Next block</strong></td>
-                <td><small><a href="{!! route('block_findone',['hash' => $block['nextblockhash'], 'currency' => $currency])!!}">{!! $block['nextblockhash'] !!}</a></small></td>
+                <td><small><a href="{!! route('block_findone',['hash' => $block->getNextBlockHash(), 'currency' => $currency])!!}">{!! $block->getNextBlockHash() !!}</a></small></td>
             </tr>
             <tr>
                 <td><strong>Previous block</strong></td>
-                <td><small><a href="{!! route('block_findone', ['hash' => $block['previousblockhash'], 'currency' => $currency]) !!}">{{$block['previousblockhash']}}</a></small></td>
+                <td><small><a href="{!! route('block_findone', ['hash' => $block->getPreviousBlockHash(), 'currency' => $currency]) !!}">{{$block->getPreviousBlockHash()}}</a></small></td>
             </tr>
             <tr>
                 <td><strong>Height</strong></td>
-                <td>{{$block['height']}}</td>
+                <td>{{$block->getHeight()}}</td>
             </tr>
             <tr>
                 <td><strong>Time</strong></td>
-                <td>{{\Carbon\Carbon::createFromTimestamp($block['time'])}}</td>
+                <td>{{\Carbon\Carbon::createFromTimestamp($block->getTime())}}</td>
             </tr>
             <tr>
                 <td><strong>Sum of inputs</strong></td>
-                <td>{{$block['sum_of_inputs']}} {{CurrencyType::currencyUnit($currency)}}</td>
+                <td>{{$block->getSumOfInputs()}} {{CurrencyType::currencyUnit($currency)}}</td>
             </tr>
             <tr>
                 <td><strong>Sum of outputs</strong></td>
-                <td>{{$block['sum_of_outputs']}} {{CurrencyType::currencyUnit($currency)}}</td>
+                <td>{{$block->getSumOfOutputs()}} {{CurrencyType::currencyUnit($currency)}}</td>
             </tr>
             <tr>
                 <td><strong>Sum of fees</strong></td>
-                <td>{{$block['sum_of_fees']}} {{CurrencyType::currencyUnit($currency)}}</td>
+                <td>{{$block->getSumOfFees()}} {{CurrencyType::currencyUnit($currency)}}</td>
             </tr>
             <tr>
                 <td><strong>Number of transactions</strong></td>
-                <td>{{$block['transactions']}}</td>
+                <td>{{$block->getTransactionsCount()}}</td>
             </tr>
             <tr>
                 <td><strong>Confirmations</strong></td>
@@ -63,7 +63,7 @@
     <div class="col-md-2">
         <nav>
             <ul class="pager">
-                <li class="next"><a href="{!! route('block_findone',['hash' => $block['nextblockhash'], 'currency' => $currency])!!}">Next block <span aria-hidden="true">&rarr;</span></a></li>
+                <li class="next"><a href="{!! route('block_findone',['hash' => $block->getNextBlockHash(), 'currency' => $currency])!!}">Next block <span aria-hidden="true">&rarr;</span></a></li>
             </ul>
         </nav>
     </div>

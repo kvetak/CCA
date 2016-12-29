@@ -20,11 +20,11 @@
     <tbody>
     @foreach($blocks as $block)
         <tr>
-            <td><a href="{{route('block_findone',['hash'=>$block['hash'], 'currency' => $currency])}}">{{$block['height']}}</a></td>
-            <td><small><a href="{{route('block_findone',['hash'=>$block['hash'], 'currency' => $currency])}}">{{$block['hash']}}</a></small></td>
-            <td>{{\Carbon\Carbon::createFromTimestamp($block['time'])}}</td>
-            <td>{{$block['transactions']}}</td>
-            <td>{{$block['sum_of_outputs']}} {{CurrencyType::currencyUnit($currency)}}</td>
+            <td><a href="{{route('block_findone',['hash'=>$block->getHash(), 'currency' => $currency])}}">{{$block->getHeight()}}</a></td>
+            <td><small><a href="{{route('block_findone',['hash'=>$block->getHash(), 'currency' => $currency])}}">{{$block->getHash()}}</a></small></td>
+            <td>{{\Carbon\Carbon::createFromTimestamp($block->getTime())}}</td>
+            <td>{{$block->getTransactionsCount()}}</td>
+            <td>{{$block->getSumOfOutputs()}} {{CurrencyType::currencyUnit($currency)}}</td>
         </tr>
     @endforeach
     </tbody>

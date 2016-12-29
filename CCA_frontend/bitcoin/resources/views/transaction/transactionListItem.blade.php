@@ -6,16 +6,16 @@
         <div class="row transaction-title">
             <div style="" class="vertical-align">
                 <div class="col-md-2">
-                    {{\Carbon\Carbon::createFromTimestamp($transaction['time'])}}
+                    {{\Carbon\Carbon::createFromTimestamp($transaction->getBlocktime())}}
                 </div>
                 <div class="col-md-5">
-                    <strong><small><a href="{{route('transaction_findone',['txid'=>$transaction['txid'], 'currency' => $currency])}}">{{$transaction['txid']}}</a></small></strong>
+                    <strong><small><a href="{{route('transaction_findone',['txid'=>$transaction->getTxid(), 'currency' => $currency])}}">{{$transaction->getTxid()}}</a></small></strong>
                 </div>
                 <div class="col-md-3">
-                    {{$transaction['sumOfOutputs']}} {{CurrencyType::currencyUnit($currency)}}
+                    {{$transaction->getSumOfOutputs()}} {{CurrencyType::currencyUnit($currency)}}
                 </div>
                 <div class="col-md-offset-1 col-md-1">
-                    <a class="collapse-btn btn btn-primary" role="button" data-toggle="collapse" href="#transaction-{{$transaction['txid']}}" aria-expanded="false" aria-controls="transaction-{{$transaction['txid']}}">
+                    <a class="collapse-btn btn btn-primary" role="button" data-toggle="collapse" href="#transaction-{{$transaction->getTxid()}}" aria-expanded="false" aria-controls="transaction-{{$transaction->getTxid()}}">
                         Detail
                     </a>
                 </div>
@@ -27,7 +27,7 @@
             <h4>Structure</h4>
         </div>
     @endif
-    <div class="{{ (!isset($displayOnlyHeader) || $displayOnlyHeader)? "collapse" : "" }} row well transaction-data" data-txid="{{$transaction['txid']}}" id="transaction-{{$transaction['txid']}}" style="margin-top:10px;">
+    <div class="{{ (!isset($displayOnlyHeader) || $displayOnlyHeader)? "collapse" : "" }} row well transaction-data" data-txid="{{$transaction->getTxid()}}" id="transaction-{{$transaction->getTxid()}}" style="margin-top:10px;">
 
     </div>
 </div>

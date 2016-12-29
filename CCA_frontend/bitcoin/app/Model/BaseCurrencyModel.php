@@ -17,7 +17,7 @@ abstract class BaseCurrencyModel extends BaseNeoModel {
      *
      * @return string
      */
-    protected function getEffectionNodeName()
+    protected function getEffectiveNodeName()
     {
         return CurrencyType::currencyUnit($this->getType())."_".$this->getNodeName();
     }

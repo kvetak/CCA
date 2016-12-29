@@ -23,7 +23,6 @@ class TransactionController extends Controller
 {
     protected $transactionModelClass;
 
-
     /**
      * Zobrazenie profilu transakcie.
      * @param $txid

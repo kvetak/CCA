@@ -1,54 +1,44 @@
 <?php
 
 namespace App\Model\Bitcoin;
-use Underscore\Types\Arrays;
+use App\Model\Bitcoin\Dto\BitcoinBlockDto;
+use App\Model\Exceptions\BlockNotFoundException;
 
 /**
  * Model pre pracu s blokmi.
  *
  * Class BitcoinBlockModel
- * @package App\Model
  *
  * @author Tomas Drozda <tomas.drozda@icloud.com>
+ * @author Martin Očenáš - xocena04@stud.fit.vutbr.cz
  */
-class BitcoinBlockModel extends BaseBitcoinModel implements \ArrayAccess
+class BitcoinBlockModel extends BaseBitcoinModel
 {
     /**
      * Název node, jak je uložen v databázi
      */
     const NODE_NAME="block";
+
     /**
-     * Hash bloku
-     * @var string
+     * Názvy jednotlivých atributů modelu, tak jak jsou uloženy v databázi
      */
-    protected $hash;
-    /**
-     * Vyska bloku.
-     * @var int
-     */
-    protected $height;
-    /**
-     * Pocet potvrdeni bloku.
-     * @var int
-     */
-    protected $confirmations;
-    /**
-     * Obsah modelu bloku.
-     * @var array
-     */
-    protected $blockModel;
+    const DB_HASH="hash",
+        DB_HEIGHT="height",
+        DB_NEXT_BLOCK_HASH="next_block_hash",
+        DB_PREV_BLOCK_HASH="prev_block_hash",
+        DB_SIZE="size_t",
+        DB_SUM_OF_FEES="sum_of_fees",
+        DB_SUM_OF_INPUTS="sum_of_inputs",
+        DB_SUM_OF_OUTPUT="sum_of_outputs",
+        DB_TIME="time",
+        DB_TRANSACTION_COUNT="transactions";
 
     /**
      * BitcoinBlockModel constructor.
-     * @param null $blockHash    - hash bloku
-     * @param null $blockHeight  - vyska bloku()
      */
-    public function __construct($blockHash = null, $blockHeight = null)
+    public function __construct()
     {
         parent::__construct();
-        $this->hash    = $blockHash;
-        $this->height   = $blockHeight;
-        $this->init();
     }
 
     protected function getNodeName()
@@ -56,108 +46,143 @@ class BitcoinBlockModel extends BaseBitcoinModel implements \ArrayAccess
         return self::NODE_NAME;
     }
 
-
     /**
-     * Inicializacta modelu.
+     * Převede uzel z reprezentace v poli na reprezentaci v Dto objektu
+     * v poli je uzel uložen např v databázi
+     *
+     * @param $array string Pole hodnot uzlu
+     * @return BitcoinBlockDto
      */
-    protected function init()
+    private function array_to_dto($array)
     {
-        $this->setModel();
+        $dto=new BitcoinBlockDto();
+
+        $dto->setHash($array[self::DB_HASH]);
+        $dto->setHeight($array[self::DB_HEIGHT]);
+        $dto->setNextBlockHash($array[self::DB_NEXT_BLOCK_HASH]);
+        $dto->setPreviousBlockHash($array[self::DB_PREV_BLOCK_HASH]);
+        $dto->setSize($array[self::DB_SIZE]);
+        $dto->setSumOfFees($array[self::DB_SUM_OF_FEES]);
+        $dto->setSumOfInputs($array[self::DB_SUM_OF_INPUTS]);
+        $dto->setSumOfOutputs($array[self::DB_SUM_OF_OUTPUT]);
+        $dto->setTime($array[self::DB_TIME]);
+        $dto->setTransactionsCount($array[self::DB_TRANSACTION_COUNT]);
+        return $dto;
     }
 
     /**
-     * Nacitanie modelu v pripade ze bola zadana vyska bloku alebo hash bloku.
+     * Převede uzel z reprezentace v Dto do pole
+     *
+     * @param BitcoinBlockDto $dto Dto s hodnotami uzlu
+     * @return array Pole s hodnotami uzlu
      */
-    protected function setModel()
+    private function dto_to_array(BitcoinBlockDto $dto)
     {
-        if (!empty($this->getHeight()))
-        {
-            $this->blockModel = $this->find("height",$this->getHeight(),1);
-        }
-        elseif (!empty($this->getHash()))
-        {
-            $this->blockModel = $this->find("hash",$this->getHash(),1);
-        }
-    }
-    /**
-     * Ziskanie hashu bloku.
-     * @return string
-     */
-    public function getHash()
-    {
-        return $this->hash;
+        $array=array();
+
+        $array[self::DB_HASH]=$dto->getHash();
+        $array[self::DB_HEIGHT]=$dto->getHeight();
+        $array[self::DB_NEXT_BLOCK_HASH]=$dto->getNextBlockHash();
+        $array[self::DB_PREV_BLOCK_HASH]=$dto->getPreviousBlockHash();
+        $array[self::DB_SIZE]=$dto->getSize();
+        $array[self::DB_SUM_OF_FEES]=$dto->getSumOfFees();
+        $array[self::DB_SUM_OF_INPUTS]=$dto->getSumOfInputs();
+        $array[self::DB_SUM_OF_OUTPUT]=$dto->getSumOfOutputs();
+        $array[self::DB_TIME]=$dto->getTime();
+        $array[self::DB_TRANSACTION_COUNT]=$dto->getTransactionsCount();
+
+        return $array;
     }
 
     /**
-     * Ziskanie vysky bloku.
-     * @return int
+     * Uloží uzel do databáze
+     *
+     * @param BitcoinBlockDto $dto
      */
-    public function getHeight()
+    public function storeNode(BitcoinBlockDto $dto)
     {
-        return $this->height;
+        $values=$this->dto_to_array($dto);
+        $this->insert($values);
     }
 
     /**
-     * Zostavenie podmienok pre vyhladavanie v kolekcii blokov.
-     * @return array
+     * Smaže všechny bloky z databáze
      */
-    protected function getFindConditions()
+    public function deleteAllNodes()
     {
-        $conditions = [];
-        if(!empty($this->getHash())){
-            $conditions[] = [
-                'hash'  => $this->getHash(),
-            ];
-        }
-        if( ! empty($this->getHeight())){
-            $conditions[] = [
-                'height'  => (int) $this->getHeight(),
-            ];
-        }
-        return $conditions;
+        $this->deleteAll();
+    }
+
+    /**
+     * Aktualizace hodnot v bloku
+     * @param BitcoinBlockDto $dto
+     */
+    public function updateBlock(BitcoinBlockDto $dto)
+    {
+        $this->update(self::DB_HASH,$dto->getHash(),
+            $this->dto_to_array($dto));
+    }
+
+    /**
+     * Vrací uzly z databáze, seřazené od nejnovějšího
+     * @param int $limit - Maximální počet uzlů, který bude vrácen
+     * @param int $skip - počet uzlů který bude přeskočen od začátku výstupu
+     * @param array $items      - definicia projekcie
+     * @return array <ID ; array <property_name ; property_value>>;
+     */
+    public function findAll($limit = 0, $skip = 0, $items = [])
+    {
+       $data=parent::findAll($limit,$skip,$items);
+       $blocks=array();
+
+       foreach ($data as $block_data)
+       {
+            $blocks[]=$this->array_to_dto($block_data);
+       }
+
+       return $blocks;
     }
 
     /**
      * Ziskanie informacii o poslednom importovanom bloku.
+     * @return BitcoinBlockDto
      */
     public function getLastBlock()
     {
-        return $this->findFirst(null,false);
-    }
-
-    /**
-     * Kontrola existencie bloku.
-     * @return bool
-     */
-    public function existsBlock()
-    {
-        return ! empty($this->blockModel);
+        return $this->array_to_dto($this->findFirst(NULL,true));
     }
 
     /**
      * Vyhladanie bloku podla hashu.
      * @param $hash            - hash bloku
      * @param array $fields    - polozky, ktore maju byt vratene
-     * @return array|null
+     * @return BitcoinBlockDto
+     * @throws BlockNotFoundException pokud blok není nalezen, vyhodí výjimku
      */
-    public static function findByHash($hash, $fields = [])
+    public function findByHash($hash, $fields = [])
     {
-        $c      = get_called_class();
-        $model  = new $c;
-        return $model->collection()->findOne(['hash' => $hash], $fields);
+        $data=$this->findOne(self::DB_HASH,$hash);
+        if (count($data) == 0)
+        {
+            throw new BlockNotFoundException("Not found block with hash ".$hash);
+        }
+        return $this->array_to_dto($data);
     }
 
     /**
      * Vyhladanie bloku podla vysky bloku.
      * @param $height         - vyska bloku
      * @param array $fields   - polozky, ktore maju byt vratene
-     * @return array|null
+     * @return BitcoinBlockDto
      */
-    public static function findByHeight($height, $fields = [])
+    public function findByHeight($height, $fields = [])
     {
-        $c      = get_called_class();
-        $model  = new $c;
-        return $model->collection()->findOne(['height'=> $height], $fields);
+        $data=$this->findOne(self::DB_HEIGHT,$height);
+        if (count($data) == 0)
+        {
+            throw new BlockNotFoundException("Not found block with hash ".$height);
+        }
+        return $this->array_to_dto($data);
     }
 
     /**
@@ -184,23 +209,9 @@ class BitcoinBlockModel extends BaseBitcoinModel implements \ArrayAccess
     }
 
     /**
-     * Implementacia Arrays Interface.
+     * Vrací počet bitcoin bloků v databázi
+     * @return int
      */
-    public function offsetSet($offset, $value) {
-    }
-
-    public function offsetExists($offset) {
-        return isset($this->blockModel[$offset]);
-    }
-
-    public function offsetUnset($offset) {
-        unset($this->blockModel[$offset]);
-    }
-
-    public function offsetGet($offset) {
-        return Arrays::get($this->blockModel, $offset, null);
-    }
-
     public function getCount()
     {
         return $this->count();
