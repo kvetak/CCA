@@ -106,7 +106,6 @@ abstract class CurrencyType{
             self::init();
         }
 
-
         if( ! is_int($currencyType)){
             $currencyType = self::fromStr($currencyType);
         }

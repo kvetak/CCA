@@ -1,6 +1,7 @@
 <?php
 
 namespace App\Model\Bitcoin;
+use App\Model\BaseNeoModel;
 use App\Model\Bitcoin\Dto\BitcoinBlockDto;
 use App\Model\Exceptions\BlockNotFoundException;
 
@@ -132,7 +133,7 @@ class BitcoinBlockModel extends BaseBitcoinModel
      */
     public function findAll($limit = 0, $skip = 0, $items = [])
     {
-       $data=parent::findAll($limit,$skip,$items);
+       $data=$this->findAllNodes($limit,$skip,$items, self::DB_HEIGHT, BaseNeoModel::DATATYPE_INTEGER);
        $blocks=array();
 
        foreach ($data as $block_data)
@@ -155,11 +156,10 @@ class BitcoinBlockModel extends BaseBitcoinModel
     /**
      * Vyhladanie bloku podla hashu.
      * @param $hash            - hash bloku
-     * @param array $fields    - polozky, ktore maju byt vratene
      * @return BitcoinBlockDto
      * @throws BlockNotFoundException pokud blok není nalezen, vyhodí výjimku
      */
-    public function findByHash($hash, $fields = [])
+    public function findByHash($hash)
     {
         $data=$this->findOne(self::DB_HASH,$hash);
         if (count($data) == 0)
@@ -172,10 +172,9 @@ class BitcoinBlockModel extends BaseBitcoinModel
     /**
      * Vyhladanie bloku podla vysky bloku.
      * @param $height         - vyska bloku
-     * @param array $fields   - polozky, ktore maju byt vratene
      * @return BitcoinBlockDto
      */
-    public function findByHeight($height, $fields = [])
+    public function findByHeight($height)
     {
         $data=$this->findOne(self::DB_HEIGHT,$height);
         if (count($data) == 0)

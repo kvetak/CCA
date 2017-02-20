@@ -16,7 +16,7 @@ class BitcoinTransactionInputDto
     private $txid;
 
     /**
-     * V transakci idenitfikuje výstup, který je zde použit jaok vstup
+     * V transakci idenitfikuje výstup, který je zde použit jako vstup
      * @var int
      */
     private $vout;

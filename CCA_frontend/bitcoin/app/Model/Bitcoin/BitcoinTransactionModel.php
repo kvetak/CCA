@@ -49,8 +49,8 @@ class BitcoinTransactionModel extends BaseBitcoinModel
         $array[self::DB_TRANS_TXID]=$dto->getTxid();
         $array[self::DB_TRANS_BLOCKHAHS]=$dto->getBlockhash();
         $array[self::DB_TRANS_TIME]=$dto->getTime();
-        $array[self::DB_TRANS_INPUTS]=json_encode($dto->getInputs());
-        $array[self::DB_TRANS_OUTPUTS]=json_encode($dto->getOutputs());
+        $array[self::DB_TRANS_INPUTS]=$this->input_output_encode($dto->getInputs());
+        $array[self::DB_TRANS_OUTPUTS]=$this->input_output_encode($dto->getOutputs());
         $array[self::DB_TRANS_BLOCKTIME]=$dto->getBlocktime();
         $array[self::DB_TRANS_SUM_OF_INPUTS]=$dto->getSumOfInputs();
         $array[self::DB_TRANS_SUM_OF_OUTPUTS]=$dto->getSumOfOutputs();
@@ -67,8 +67,8 @@ class BitcoinTransactionModel extends BaseBitcoinModel
         $dto->setTxid($array[self::DB_TRANS_TXID]);
         $dto->setBlockhash($array[self::DB_TRANS_BLOCKHAHS]);
         $dto->setTime($array[self::DB_TRANS_TIME]);
-        $dto->setInputs(json_decode($array[self::DB_TRANS_INPUTS]));
-        $dto->setOutputs(json_decode($array[self::DB_TRANS_OUTPUTS]));
+        $dto->setInputs($this->input_output_decode($array[self::DB_TRANS_INPUTS]));
+        $dto->setOutputs($this->input_output_decode($array[self::DB_TRANS_OUTPUTS]));
         $dto->setBlocktime($array[self::DB_TRANS_BLOCKTIME]);
         $dto->setSumOfInputs($array[self::DB_TRANS_SUM_OF_INPUTS]);
         $dto->setSumOfOutputs($array[self::DB_TRANS_SUM_OF_OUTPUTS]);
@@ -120,7 +120,7 @@ class BitcoinTransactionModel extends BaseBitcoinModel
         $data = $this->findOne(self::DB_TRANS_TXID,$txId);
         if (count($data) == 0)
         {
-            throw new TransactionNotFoundException("Not found block with hash ".$txId);
+            throw new TransactionNotFoundException("Not found transaction with hash (txid) = ".$txId);
         }
         return $this->array_to_dto($data);
     }
@@ -150,7 +150,7 @@ class BitcoinTransactionModel extends BaseBitcoinModel
         $outputs[$n]=$outputDto;
         $this->update(self::DB_TRANS_TXID,$txid,
             array(
-                self::DB_TRANS_OUTPUTS => $outputs
+                self::DB_TRANS_OUTPUTS => $this->input_output_encode($outputs)
             )
         );
     }
@@ -320,5 +320,15 @@ class BitcoinTransactionModel extends BaseBitcoinModel
             $addresses = array_merge($addresses, $input['addresses']);
         }
         return array_unique($addresses);
+    }
+
+    private function input_output_encode($val)
+    {
+        return base64_encode(serialize($val));
+    }
+
+    private function input_output_decode($val)
+    {
+        return unserialize(base64_decode($val));
     }
 }

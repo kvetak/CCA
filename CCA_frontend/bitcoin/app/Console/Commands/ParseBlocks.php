@@ -134,14 +134,13 @@ class ParseBlocks extends Command
             $parser->startFrom(new PositionDto($this->name_of_first_file,0));
         }
 
-        $blocks= $parser->parse(10); // TODO: nastavit na hodnotu zadanou na vstupu
+        $blocks= $parser->parse(200); // TODO: nastavit na hodnotu zadanou na vstupu
 
         foreach($blocks as $block)
         {
             $this->process_block($block);
         }
-
-        $this->positionManager->store($parser->getPosition());
+//        $this->positionManager->store($parser->getPosition());
     }
 
     /**
@@ -152,8 +151,6 @@ class ParseBlocks extends Command
      */
     private function process_block(BlockDto $blockDto)
     {
-//        print_r($blockDto);
-
         $bitcoinBlockDto=new BitcoinBlockDto();
 
         $bitcoinBlockDto->setSize($blockDto->getBlockSize());
@@ -172,8 +169,8 @@ class ParseBlocks extends Command
         $unique_inputs=0;
 
         $height=0; // height genesis bloku
-        // nejedná se o genesis block
-        if ($bitcoinBlockDto->getPreviousBlockHash() != 0)
+        // pokud se nejedná se o genesis block
+        if ($bitcoinBlockDto->getPreviousBlockHash() != "0000000000000000000000000000000000000000000000000000000000000000")
         {
             // nastavení zřetězení bloků a height
             $previousBlock = $this->bitcoinBlockModel->findByHash($bitcoinBlockDto->getPreviousBlockHash());
@@ -200,11 +197,10 @@ class ParseBlocks extends Command
 
 
            $inputDtos=array();
-
            foreach ($inputs as $input)
            {
                $inputDto=new BitcoinTransactionInputDto();
-               $inputDto->setTxid($input->getHash());
+               $inputDto->setTxid(bin2hex($input->getHash()));
                $inputDto->setVout($input->getIndex());
 
                // coinbase transaction
@@ -230,14 +226,13 @@ class ParseBlocks extends Command
            }
 
            $outputDtos=array();
-
            $n=0;
            foreach ($outputs as $output)
            {
                $outputDto = new BitcoinTransactionOutputDto();
                $outputDto->setN($n++);
                $outputDto->setSpent(false);
-               $outputDto->setValue($output->getValue());
+               $outputDto->setRawValue($output->getValue());
 
                $sum_of_transaction_outputs += $outputDto->getValue();
                // TODO: dopočítat adrey do výstupního dto
@@ -247,15 +242,19 @@ class ParseBlocks extends Command
             $sum_of_inputs += $sum_of_transaction_inputs;
             $sum_of_outputs += $sum_of_transaction_outputs;
 
-            // v coinbase transakci s enepočítají poplatky
+            // v coinbase transakci se nepočítají poplatky
             if (!$coinbase) {
                 $transaction_fee = $sum_of_transaction_outputs - $sum_of_transaction_inputs;
                 $sum_of_fees += $transaction_fee;
             }
+            $transactionDto->setSumOfInputs($sum_of_inputs);
+            $transactionDto->setSumOfOutputs($sum_of_outputs);
+            $transactionDto->setSumOfFees($sum_of_fees);
+            $transactionDto->setInputs($inputDtos);
+            $transactionDto->setOutputs($outputDtos);
 
             $this->bitcoinTransactionModel->storeNode($transactionDto);
         }
-
         $bitcoinBlockDto->setSumOfInputs($sum_of_inputs);
         $bitcoinBlockDto->setSumOfOutputs($sum_of_outputs);
         $bitcoinBlockDto->setSumOfFees($sum_of_fees);
@@ -270,11 +269,16 @@ class ParseBlocks extends Command
      */
     private function transaction_hash(TransactionDto $transactionDto)
     {
-        $string="";
+        $hash = hash("sha256",hash("sha256",$transactionDto->getRawTransaction(),true));
+        return $this->SwapOrder($hash);
+
+        // starý způsob jak počítat hash transakce, taky to jde ale když máme raw data transakce, tak to neín třeba
+       /* $string="";
         $string.=$this->littleEndian($transactionDto->getVersion());
 
         $input_transactions=$transactionDto->getInputTransactions();
         $string.=$this->writeVarInt(count($input_transactions));
+
 
         foreach ($input_transactions as $input_transaction)
         {
@@ -297,7 +301,7 @@ class ParseBlocks extends Command
         $string.=$this->littleEndian($transactionDto->getLockTime());
 
         $hash = hash("sha256",hash("sha256",hex2bin($string),true));
-        return $this->SwapOrder($hash);
+        return $this->SwapOrder($hash);*/
     }
 
     /**
@@ -314,14 +318,6 @@ class ParseBlocks extends Command
         $time = $this->littleEndian($blockDto->getTime());
         $bits = $this->littleEndian($blockDto->getTarget());
         $nonce = $this->littleEndian($blockDto->getNonce());
-
-
-        /*$version = $this->littleEndian(1);
-        $prevBlockHash = $this->SwapOrder("0000000000000000000000000000000000000000000000000000000000000000");
-        $rootHash = $this->SwapOrder("4a5e1e4baab89f3a32518a88c31bc87f618f76673e2cc77ab2127b7afdeda33b");
-        $time = $this->littleEndian(1231006505);
-        $bits = $this->littleEndian(486604799);
-        $nonce = $this->littleEndian(2083236893);*/
 
         //concat it all
         $header_hex = $version . $prevBlockHash . $rootHash . $time . $bits . $nonce;

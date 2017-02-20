@@ -90,6 +90,9 @@ class BlockParser
      */
     private function parseTransaction()
     {
+        // store all raw data of transaction into buffer
+        $this->fileReader->start_buffer();
+
         $transactionDto=new TransactionDto();
         $transactionDto->setVersion($this->typeReader->readUInt());
 
@@ -112,6 +115,11 @@ class BlockParser
         $transactionDto->setOutputTransactions($outputs);
 
         $transactionDto->setLockTime($this->typeReader->readUInt());
+
+        // copy buffer to transaction
+        $this->fileReader->end_buffer();
+        $transactionDto->setRawTransaction($this->fileReader->get_buffer());
+
         return $transactionDto;
     }
 

@@ -39,7 +39,7 @@ class SearchController extends Controller{
          * V pripade, ze vstup je cislo a existuje block s danou vyskou
          */
         if($numberInput && BitcoinBlockModel::exists(['height' => $numberInput])){
-            $block = BitcoinBlockModel::findByHeight($numberInput, ['hash' => true, "_id" => false]);
+            $block = BitcoinBlockModel::findByHeight($numberInput);
             return redirect(
                 route('block_findone', [
                     'hash' => $block['hash']

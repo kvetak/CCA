@@ -15,6 +15,9 @@ use GraphAware\Common\Result\Record;
  */
 abstract class BaseNeoModel
 {
+    const DATATYPE_INTEGER="toInteger",
+        DATATYPE_STRING="toString";
+
     /**
      * Klient databáze
      * @var \GraphAware\Neo4j\Client\ClientInterface
@@ -61,13 +64,13 @@ abstract class BaseNeoModel
      * @param array $items      - definicia projekcie
      * @return array <ID ; array <property_name ; property_value>>;
      */
-    public function findAll($limit = 0, $skip = 0, $items = [])
+    protected function findAllNodes($limit = 0, $skip = 0, $items = [], $order_by=null, $order_datatype=null)
     {
         $query_result=$this->neoConnection->run("MATCH (n:".$this->getEffectiveNodeName().") 
-            return n 
-            order by id(n) desc 
-            skip ".$skip." 
-            limit ".$limit."");
+            return n "
+            .$this->order_by_clause($order_by,$order_datatype,true).
+            " skip ".$skip." 
+            limit ".$limit);
 
         $result=array();
         $records=$query_result->records();
@@ -125,7 +128,7 @@ abstract class BaseNeoModel
         $skip_str = ($skip !== false && $skip > 0) ? "skip ".$skip : "";
 
         $query_result=$this->neoConnection->run("MATCH (n:".$this->getEffectiveNodeName().") 
-            WHERE n.".$property." = \"".$value."\" 
+            WHERE n.".$property." = \"".$value."\"
             return n 
             limit 1
             ".$skip_str);
@@ -145,12 +148,9 @@ abstract class BaseNeoModel
      */
     protected function findFirst($order_by = null, $descending = false)
     {
-        $ordering_property=($order_by == null) ? "id(n)" : $order_by;
-        $desc = ($descending) ? "desc" : "";
-
         $query_result=$this->neoConnection->run("MATCH (n:".$this->getEffectiveNodeName().") 
-            return n 
-            order by ".$ordering_property."  ".$desc." 
+            return n"
+            .$this->order_by_clause($order_by,null,$descending)."
             limit 1");
 
         return $this->node_to_array($query_result->firstRecord());
@@ -208,6 +208,39 @@ abstract class BaseNeoModel
         $this->neoConnection->run("MATCH (n:".$this->getEffectiveNodeName().") delete n");
     }
 
+    /**
+     * Vytvoří klauzuli pro řazení výstupu, podle daných parametrů
+     * @param $property string Hodnota, podle které se řadí
+     * @param $datatype string Datový typ property
+     * @param $desc bool Sestupnost řazení
+     * @return string klauzule "order by"
+     */
+    private function order_by_clause($property,$datatype, $desc)
+    {
+        // pokud není nic specifikováno, aplikuj výchozí řazení podle id
+        if ($property == null) {
+            $order = "id(n)";
+        }
+        // řazení podle property
+        else
+        {
+            // pokud je specifikován datový typ property, aplikuj datový typ
+            if ($datatype != null){
+                $order= $datatype."(n.".$property.")";
+            }
+            // pokud není datový typ použij jen property
+            else
+            {
+                $order = "n.".$property;
+            }
+        }
+
+        if ($desc)
+        {
+            $order.=" desc";
+        }
+        return "order by ".$order;
+    }
 
     private function node_to_array(Record $record)
     {

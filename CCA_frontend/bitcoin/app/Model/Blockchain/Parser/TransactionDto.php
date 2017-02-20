@@ -36,6 +36,11 @@ class TransactionDto
     private $outputTransactions;
 
     /**
+     * @var String - binary blockchain reprezentation of this transaction
+     */
+    private $rawTransaction;
+
+    /**
      * @return int
      */
     public function getVersion()
@@ -99,7 +104,21 @@ class TransactionDto
         $this->outputTransactions = $outputTransactions;
     }
 
+    /**
+     * @return String
+     */
+    public function getRawTransaction()
+    {
+        return $this->rawTransaction;
+    }
 
+    /**
+     * @param String $rawTransaction
+     */
+    public function setRawTransaction($rawTransaction)
+    {
+        $this->rawTransaction = $rawTransaction;
+    }
 
 
     public function to_string()

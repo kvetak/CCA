@@ -38,6 +38,18 @@ class FileReader
      */
     private $remainingBytes;
 
+
+    /**
+     * @var String - if buffer is enabled, copy here every read byte
+     */
+    private $buffer;
+
+    /**
+     * @var bool - is buffer enabled
+     */
+    private $buffer_enabled;
+
+
     /**
      * FileReader constructor.
      *
@@ -49,6 +61,7 @@ class FileReader
         $this->fileHandle=null;
         $this->filename=null;
         $this->remainingBytes=0;
+        $this->buffer_enabled=false;
     }
 
     /**
@@ -86,12 +99,38 @@ class FileReader
         {
             return $this->readFromFile($count);
         }
-        echo "out of file".PHP_EOL;
 
         $output=$this->readFromFile($this->remainingBytes);
         $still_to_read=$count-$this->remainingBytes;
         $this->openNextFile();
         return $output.$this->readFromFile($still_to_read);
+    }
+
+    /**
+     * Enable and empty buffer
+     * Since invocation of this method, all data read from input file, will be copied to buffer
+     */
+    public function start_buffer()
+    {
+        $this->buffer_enabled=true;
+        $this->buffer="";
+    }
+
+    /**
+     * Stop writing to buffer
+     */
+    public function end_buffer()
+    {
+        $this->buffer_enabled=false;
+    }
+
+    /**
+     * Get content of buffer
+     * @return String content of buffer
+     */
+    public function get_buffer()
+    {
+        return $this->buffer;
     }
 
     /**
@@ -109,6 +148,12 @@ class FileReader
             throw new FileReadException("Unable to read data from file ".$this->filename);
         }
         $this->remainingBytes-=$count;
+
+        // copy read data to buffer
+        if ($this->buffer_enabled)
+        {
+            $this->buffer.=$output;
+        }
         return $output;
     }
 

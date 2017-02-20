@@ -31,19 +31,19 @@ class TransactionController extends Controller
     public function findOne($currency, $txid)
     {
         $displayOnlyHeader              = False;
-        $transactionModelClass          = CurrencyType::transactionModel($currency);
-        $blockModelClass                = CurrencyType::blockModel($currency);
-        $addressModelClass              = CurrencyType::addressModel($currency);
+        $transactionModel               = CurrencyType::transactionModel($currency);
+        $blockModel                     = CurrencyType::blockModel($currency);
+        $addressModel                   = CurrencyType::addressModel($currency);
 
-        $transaction                    = $transactionModelClass::findByTxId($txid);
-        $lastBlock                      = (new $blockModelClass())->getLastBlock();
-        $transactionInBlock             = $blockModelClass::findByHash($transaction['blockhash']);
-        $isTransactionConfirmed         = $transactionModelClass::isConfirmed($transactionInBlock['height'], $lastBlock['height']);
+        $transactionDto                 = $transactionModel->findByTxId($txid);
+        $lastBlock                      = $blockModel->getLastBlock();
+        $transactionInBlock             = $blockModel->findByHash($transactionDto->getBlockhash());
+        $isTransactionConfirmed         = $transactionModel::isConfirmed($transactionInBlock->getHeight(), $lastBlock->getHeight());
 
         $transactionConfirmationMessage = $isTransactionConfirmed ? 'Transaction is confirmed!' : 'Transaction is not confirmed!';
-        $confirmations                  = $lastBlock['height'] - $transactionInBlock['height'];
-        $tags = $addressModelClass::getTagsByAddresses($transactionModelClass::getAddressesFromTransaction($transaction['inputsOutputs']));
-        return view('transaction/findOne',compact('transaction', 'displayOnlyHeader', 'transactionConfirmationMessage', 'confirmations', 'isTransactionConfirmed', 'tags', 'currency'));
+        $confirmations                  = $lastBlock->getHeight() - $transactionInBlock->getHeight();
+        $tags = $addressModel::getTagsByAddresses($transactionModel::getAddressesFromTransaction($transactionDto['inputsOutputs']));
+        return view('transaction/findOne',compact('transactionDto', 'displayOnlyHeader', 'transactionConfirmationMessage', 'confirmations', 'isTransactionConfirmed', 'tags', 'currency'));
     }
 
     /**
@@ -53,8 +53,8 @@ class TransactionController extends Controller
      */
     public function visualize($currency, $txid)
     {
-        $transactionModelClass          = CurrencyType::transactionModel($currency);
-        $transaction                    = $transactionModelClass::findByTxId($txid);
+        $transactionModel               = CurrencyType::transactionModel($currency);
+        $transaction                    = $transactionModel->findByTxId($txid);
         if(empty($transaction)){
             throw new NotFoundHttpException();
         }
@@ -68,10 +68,10 @@ class TransactionController extends Controller
      */
     public function structure($currency, $txid)
     {
-        $transactionModelClass          = CurrencyType::transactionModel($currency);
-        $addressModelClass              = CurrencyType::addressModel($currency);
-        $transaction                    = $transactionModelClass::findByTxId($txid);
-        $tags = $addressModelClass::getTagsByAddresses($transactionModelClass::getAddressesFromTransaction($transaction['inputsOutputs']));
+        $transactionModel          = CurrencyType::transactionModel($currency);
+        $addressModel              = CurrencyType::addressModel($currency);
+        $transaction                    = $transactionModel->findByTxId($txid);
+        $tags = $addressModel::getTagsByAddresses($transactionModel::getAddressesFromTransaction($transaction['inputsOutputs']));
         $displayOnlyHeader = false;
         return view('transaction/structure',compact('transaction', 'displayOnlyHeader', 'tags', 'currency'));
     }

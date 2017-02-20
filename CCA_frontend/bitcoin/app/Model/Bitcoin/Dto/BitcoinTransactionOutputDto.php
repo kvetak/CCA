@@ -75,7 +75,7 @@ class BitcoinTransactionOutputDto
      * Hodnota value je vložena v Satoshis kódování (nativní pro blockchain) a je třeba ji zformátovat
      * @param float $value
      */
-    public function setValue($value)
+    public function setRawValue($value)
     {
         $this->value = $value * self::SATOSHIS_COEFICIENT;
     }
@@ -84,7 +84,7 @@ class BitcoinTransactionOutputDto
      * Hodnota value je již zformátovaná a není nutné ji převádět
      * @param float $value
      */
-    public function setFormattedValue($value)
+    public function setValue($value)
     {
         $this->value=$value;
     }
