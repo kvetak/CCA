@@ -6,16 +6,27 @@
 
 namespace App\Model\Bitcoin\Dto;
 
-
+/**
+ * DTO pro jeden výstup transakce
+ *
+ * Class BitcoinTransactionOutputDto
+ * @package App\Model\Bitcoin\Dto
+ */
 class BitcoinTransactionOutputDto
 {
     const SATOSHIS_COEFICIENT=0.00000001;
 
     /**
-     * Adresy na které směřuje tento výstup
-     * @var array
+     * Rozparsovaný script pubkey který určuje, kdo může tento výstup použít
+     * @var BitcoinScriptRedeemerDto
      */
-    private $addresses;
+    private $redeemer_dto;
+
+    /**
+     * script pubkey výstupu transakce v raw podobě
+     * @var string
+     */
+    private $script_pubkey;
 
     /**
      * Množství BTC utracených v tomto výstupu
@@ -48,19 +59,19 @@ class BitcoinTransactionOutputDto
     private $spentTs;
 
     /**
-     * @return array
+     * @return BitcoinScriptRedeemerDto
      */
-    public function getAddresses()
+    public function getRedeemerDto()
     {
-        return $this->addresses;
+        return $this->redeemer_dto;
     }
 
     /**
-     * @param array $addresses
+     * @param BitcoinScriptRedeemerDto $redeemer_dto
      */
-    public function setAddresses($addresses)
+    public function setRedeemerDto($redeemer_dto)
     {
-        $this->addresses = $addresses;
+        $this->redeemer_dto = $redeemer_dto;
     }
 
     /**
@@ -151,5 +162,21 @@ class BitcoinTransactionOutputDto
     public function setSpentTs($spentTs)
     {
         $this->spentTs = $spentTs;
+    }
+
+    /**
+     * @return string
+     */
+    public function getScriptPubkey()
+    {
+        return $this->script_pubkey;
+    }
+
+    /**
+     * @param string $script_pubkey
+     */
+    public function setScriptPubkey($script_pubkey)
+    {
+        $this->script_pubkey = $script_pubkey;
     }
 }

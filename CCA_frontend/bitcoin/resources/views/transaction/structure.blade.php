@@ -2,8 +2,8 @@
     use Underscore\Types\Arrays;
     use \App\Model\CurrencyType;
 
-    $inputs = Arrays::filterBy($transaction['inputsOutputs'], 'type', \App\Model\InputsOutputsType::TYPE_INPUT);
-    $outputs = Arrays::filterBy($transaction['inputsOutputs'], 'type', \App\Model\InputsOutputsType::TYPE_OUTPUT);
+//    $inputs = Arrays::filterBy($transaction['inputsOutputs'], 'type', \App\Model\InputsOutputsType::TYPE_INPUT);
+//    $outputs = Arrays::filterBy($transaction['inputsOutputs'], 'type', \App\Model\InputsOutputsType::TYPE_OUTPUT);
 ?>
 <div class="vertical-align">
     <div class="col-md-2">
@@ -15,7 +15,7 @@
 <div class="vertical-align">
     <div class="col-md-5">
         <ul style="padding: 0;">
-        @foreach( $inputs  as $vin)
+        @foreach( $transactionDto->getInputs()  as $vin)
             @if(isset($vin['coinbase']))
                 <li>Coinbase transaction without inputs</li>
             @else
@@ -46,7 +46,7 @@
     </div>
     <div class="col-md-5">
         <ul class="center-block" style="padding: 0;">
-            @foreach($outputs as $vout)
+            @foreach($transactionDto->getOutputs() as $vout)
             <li>
                 <?php
                     $address = $vout['addresses'][0];

@@ -42,7 +42,7 @@ class TransactionController extends Controller
 
         $transactionConfirmationMessage = $isTransactionConfirmed ? 'Transaction is confirmed!' : 'Transaction is not confirmed!';
         $confirmations                  = $lastBlock->getHeight() - $transactionInBlock->getHeight();
-        $tags = $addressModel::getTagsByAddresses($transactionModel::getAddressesFromTransaction($transactionDto['inputsOutputs']));
+//        $tags = $addressModel::getTagsByAddresses($transactionModel::getAddressesFromTransaction($transactionDto['inputsOutputs']));
         return view('transaction/findOne',compact('transactionDto', 'displayOnlyHeader', 'transactionConfirmationMessage', 'confirmations', 'isTransactionConfirmed', 'tags', 'currency'));
     }
 

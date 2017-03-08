@@ -4,7 +4,7 @@
 @extends('layout')
 @section('content')
     <div class="page-header">
-        <h1>Transaction: <small>{{$transaction['txid']}}</small></h1>
+        <h1>Transaction: <small>{{$transactionDto->getTxid()}}</small></h1>
         <div class="alert {{$isTransactionConfirmed ? 'alert-success' : 'alert-danger'}}" role="alert">{{$transactionConfirmationMessage}}</div>
     </div>
     <div class="well transaction-data">

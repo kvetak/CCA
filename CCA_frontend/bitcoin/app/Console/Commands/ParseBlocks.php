@@ -6,12 +6,14 @@
 
 namespace App\Console\Commands;
 
+use App\Model\Base58Encoder;
 use App\Model\Bitcoin\BitcoinBlockModel;
 use App\Model\Bitcoin\BitcoinTransactionModel;
 use App\Model\Bitcoin\Dto\BitcoinBlockDto;
 use App\Model\Bitcoin\Dto\BitcoinTransactionDto;
 use App\Model\Bitcoin\Dto\BitcoinTransactionInputDto;
 use App\Model\Bitcoin\Dto\BitcoinTransactionOutputDto;
+use App\Model\Bitcoin\ScriptPubkeyParser;
 use App\Model\Blockchain\Parser\BlockchainParser;
 use App\Model\Blockchain\Parser\BlockDto;
 use App\Model\Blockchain\Parser\PositionDto;
@@ -81,6 +83,11 @@ class ParseBlocks extends Command
     private $bitcoinTransactionModel;
 
     /**
+     * @var ScriptPubkeyParser
+     */
+    private $scriptPubkeyParser;
+
+    /**
      * Execute the console command.
      */
     public function handle()
@@ -89,6 +96,7 @@ class ParseBlocks extends Command
         $this->positionManager=new PositionManager();
         $this->bitcoinBlockModel=new BitcoinBlockModel();
         $this->bitcoinTransactionModel=new BitcoinTransactionModel();
+        $this->scriptPubkeyParser=new ScriptPubkeyParser();
 
         if ($this->option("clear"))
         {
@@ -134,13 +142,13 @@ class ParseBlocks extends Command
             $parser->startFrom(new PositionDto($this->name_of_first_file,0));
         }
 
-        $blocks= $parser->parse(200); // TODO: nastavit na hodnotu zadanou na vstupu
+        $blocks= $parser->parse(1); // TODO: nastavit na hodnotu zadanou na vstupu
 
         foreach($blocks as $block)
         {
             $this->process_block($block);
         }
-//        $this->positionManager->store($parser->getPosition());
+        $this->positionManager->store($parser->getPosition());
     }
 
     /**
@@ -234,8 +242,12 @@ class ParseBlocks extends Command
                $outputDto->setSpent(false);
                $outputDto->setRawValue($output->getValue());
 
+               $script_pubkey=$output->getScriptPubkey();
+
+               $outputDto->setScriptPubkey($script_pubkey);
+               $outputDto->setRedeemerDto($this->scriptPubkeyParser->parse($script_pubkey));
+
                $sum_of_transaction_outputs += $outputDto->getValue();
-               // TODO: dopočítat adrey do výstupního dto
                $outputDtos[]=$outputDto;
            }
 
@@ -402,9 +414,6 @@ class ParseBlocks extends Command
 
         return $output;
     }
-
-
-
 
     /**
      * Vymazání všech bloků z databáze

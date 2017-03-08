@@ -148,10 +148,12 @@ abstract class BaseNeoModel
      */
     protected function findFirst($order_by = null, $descending = false)
     {
-        $query_result=$this->neoConnection->run("MATCH (n:".$this->getEffectiveNodeName().") 
-            return n"
+        $query="MATCH (n:".$this->getEffectiveNodeName().") 
+            return n "
             .$this->order_by_clause($order_by,null,$descending)."
-            limit 1");
+            limit 1";
+
+        $query_result=$this->neoConnection->run($query);
 
         return $this->node_to_array($query_result->firstRecord());
     }
