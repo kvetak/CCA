@@ -15,16 +15,17 @@
 <div class="vertical-align">
     <div class="col-md-5">
         <ul style="padding: 0;">
-        @foreach( $transactionDto->getInputs()  as $vin)
-            @if(isset($vin['coinbase']))
+            @if($transactionDto->isCoinbase())
                 <li>Coinbase transaction without inputs</li>
             @else
+                @foreach( $transactionDto->getInputs()  as $vin)
                 <?php
-                        $address    = $vin['addresses'][0];
-                        $tag        = Arrays::get(Arrays::filterBy($tags, 'address', $address), '0.tags.0.tag', null);
-                        $tagUrl     = Arrays::get(Arrays::filterBy($tags, 'address', $address), '0.tags.0.url', null);
+                      $address = $vin->getAddresses()[0];
+//                    $address    = $vin['addresses'][0];
+//                        $tag        = Arrays::get(Arrays::filterBy($tags, 'address', $address), '0.tags.0.tag', null);
+//                        $tagUrl     = Arrays::get(Arrays::filterBy($tags, 'address', $address), '0.tags.0.url', null);
                 ?>
-                <li><a href="{{route('transaction_findone',['txid'=>$vin['txid'], 'currency' => $currency])}}" class="glyphicon glyphicon-arrow-left"/>&nbsp;
+                <li><a href="{{route('transaction_findone',['txid'=>$transactionDto->getTxid(), 'currency' => $currency])}}" class="glyphicon glyphicon-arrow-left"/>&nbsp;
                     @if( ! empty($tag) )
                         <a href="{{route('address_findone',['address'=> $address, 'currency' => $currency])}}">{{str_limit($address, 15)}}
                             @if(!empty($tagUrl))
@@ -36,9 +37,9 @@
                     @else
                         <a href="{{route('address_findone',['address'=> $address, 'currency' => $currency])}}">{{$address}}</a>
                     @endif
-                    <small> ({{$vin['value']}} {{CurrencyType::currencyUnit($currency)}})</small></li>
+                    <small> ({{$vin->getValue()}} {{CurrencyType::currencyUnit($currency)}})</small></li>
+                @endforeach
             @endif
-        @endforeach
         </ul>
     </div>
     <div class="col-xs-1">
@@ -49,9 +50,10 @@
             @foreach($transactionDto->getOutputs() as $vout)
             <li>
                 <?php
-                    $address = $vout['addresses'][0];
-                    $tag        = Arrays::get(Arrays::filterBy($tags, 'address', $address), '0.tags.0.tag', null);
-                    $tagUrl     = Arrays::get(Arrays::filterBy($tags, 'address', $address), '0.tags.0.url', null);
+                    $address=$vout->getRedeemerDto()->getAddresses()[0];
+//                    $address = $vout['addresses'][0];
+//                    $tag        = Arrays::get(Arrays::filterBy($tags, 'address', $address), '0.tags.0.tag', null);
+//                    $tagUrl     = Arrays::get(Arrays::filterBy($tags, 'address', $address), '0.tags.0.url', null);
                 ?>
                 @if( ! empty($tag))
                         <a href="{{route('address_findone',['address'=> $address, 'currency' => $currency])}}">{{str_limit($address, 15)}}
@@ -63,9 +65,9 @@
                 @else
                         <a href="{{route('address_findone',['address'=> $address, 'currency' => $currency])}}">{{$address}}
                 @endif
-                </a> <small>({{$vout['value']}} {{CurrencyType::currencyUnit($currency)}})</small>
-                @if($vout['spent'])
-                    <a href="{{route('transaction_findone', ['txid' =>$vout['spentTxid'], 'currency' => $currency])}}" class="glyphicon glyphicon-arrow-right"></a>
+                </a> <small>({{$vout->getValue()}} {{CurrencyType::currencyUnit($currency)}})</small>
+                @if($vout->isSpent())
+                    <a href="{{route('transaction_findone', ['txid' =>$vout->getSpentTxid(), 'currency' => $currency])}}" class="glyphicon glyphicon-arrow-right"></a>
                 @endif
             </li>
             @endforeach
@@ -75,19 +77,19 @@
 
 <div class="row">
     <div class="col-md-5 col-md-offset-2">
-    @if( ! isset($vin['coinbase']))
-        Unique input addresses: {{$transaction['uniqueInputs']}}
+    @if( !$transactionDto->isCoinbase())
+        Unique input addresses: {{$transactionDto->getUniqueInputs()}}
     @endif
 </div>
 </div>
 <div class="row">
     <div class="col-md-4" style="padding: 0;">
-        <div class="btn btn-default btn-info"><strong>Fees:</strong> {{$transaction['sumOfFees']}} {{CurrencyType::currencyUnit($currency)}}</div>
+        <div class="btn btn-default btn-info"><strong>Fees:</strong> {{$transactionDto->getSumOfFees()}} {{CurrencyType::currencyUnit($currency)}}</div>
     </div>
     <div class="col-md-8 text-right">
         <div role="group" aria-label="...">
-        <div class="btn btn-default btn-primary"><strong>Input:</strong> <span style="font-size:0.9em;">{{$transaction['sumOfInputs']}} {{CurrencyType::currencyUnit($currency)}}</span></div>
-        <div class="btn btn-success"><strong>Output:</strong> <span style="font-size:0.9em;">{{$transaction['sumOfOutputs']}} {{CurrencyType::currencyUnit($currency)}}</span></div>
+        <div class="btn btn-default btn-primary"><strong>Input:</strong> <span style="font-size:0.9em;">{{$transactionDto->getSumOfInputs()}} {{CurrencyType::currencyUnit($currency)}}</span></div>
+        <div class="btn btn-success"><strong>Output:</strong> <span style="font-size:0.9em;">{{$transactionDto->getSumOfOutputs()}} {{CurrencyType::currencyUnit($currency)}}</span></div>
         </div>
     </div>
 </div>

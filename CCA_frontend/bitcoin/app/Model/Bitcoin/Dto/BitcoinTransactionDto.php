@@ -26,6 +26,13 @@ class BitcoinTransactionDto
      */
     private $time;
 
+
+    /**
+     * Indikátor jestli je transakce coinbase
+     * @var bool
+     */
+    private $coinbase;
+
     /**
      * Vstupy transakce
      * @var array
@@ -226,5 +233,21 @@ class BitcoinTransactionDto
     public function setUniqueInputs($unique_inputs)
     {
         $this->unique_inputs = $unique_inputs;
+    }
+
+    /**
+     * @return bool
+     */
+    public function isCoinbase()
+    {
+        return $this->coinbase;
+    }
+
+    /**
+     * @param bool $coinbase
+     */
+    public function setCoinbase($coinbase)
+    {
+        $this->coinbase = $coinbase;
     }
 }

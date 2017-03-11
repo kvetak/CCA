@@ -6,7 +6,7 @@
  * Time: 15:17
  */
 
-namespace App\Model\Bitcoin\Dto;
+namespace App\Model\Bitcoin\ScriptParser\Dto;
 
 /**
  * Class BitcoinScriptRedeemerDto
@@ -16,24 +16,8 @@ namespace App\Model\Bitcoin\Dto;
  *
  * DTO pro přenos informací získaných z políčka ScriptPubkey ve výstupu transakce
  */
-class BitcoinScriptRedeemerDto
+class BitcoinScriptRedeemerDto extends AbstractBitcoinScriptDto
 {
-    /**
-     * Basic transaction pubkey script types
-     */
-    const PAY_TO_PUBKEY=0,
-        PAY_TO_HASH_PUBKEY=1,
-        PAY_TO_SCRIPT_HASH=2,
-        PAY_TO_MILTISIG=3,
-        PAY_NULLDATA=4,
-        SCRIPT_UNKNOWN=5;
-
-    /**
-     * Type of transaction script
-     * @var
-     */
-    private $type;
-
     /**
      * Array of addresses of possible redeemers of payment
      * @var array
@@ -83,22 +67,6 @@ class BitcoinScriptRedeemerDto
         $this->pubkeys = $pubkeys;
     }
 
-
-    /**
-     * @return mixed
-     */
-    public function getType()
-    {
-        return $this->type;
-    }
-
-    /**
-     * @param mixed $type
-     */
-    public function setType($type)
-    {
-        $this->type = $type;
-    }
 
     /**
      * @return array

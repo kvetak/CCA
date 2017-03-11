@@ -7,6 +7,8 @@
 namespace App\Model\Bitcoin\Dto;
 
 
+use App\Model\Bitcoin\ScriptParser\Dto\BitcoinScriptInputDto;
+
 class BitcoinTransactionInputDto
 {
     /**
@@ -28,12 +30,16 @@ class BitcoinTransactionInputDto
     private $value;
 
     /**
-     * Pole adres, použitých pro tento vstup
-     * @var array
+     * Text ScriptSig použitého v této transakce
+     * @var String
      */
-    private $addresses;
+    private $scriptSig;
 
-
+    /**
+     * Parsed script sig
+     * @var BitcoinScriptInputDto
+     */
+    private $parsedScriptSig;
 
     /**
      * @return int
@@ -84,18 +90,34 @@ class BitcoinTransactionInputDto
     }
 
     /**
-     * @return array
+     * @return String
      */
-    public function getAddresses()
+    public function getScriptSig()
     {
-        return $this->addresses;
+        return $this->scriptSig;
     }
 
     /**
-     * @param array $addresses
+     * @param String $scriptSig
      */
-    public function setAddresses($addresses)
+    public function setScriptSig($scriptSig)
     {
-        $this->addresses = $addresses;
+        $this->scriptSig = $scriptSig;
+    }
+
+    /**
+     * @return BitcoinScriptInputDto
+     */
+    public function getParsedScriptSig()
+    {
+        return $this->parsedScriptSig;
+    }
+
+    /**
+     * @param BitcoinScriptInputDto $parsedScriptSig
+     */
+    public function setParsedScriptSig($parsedScriptSig)
+    {
+        $this->parsedScriptSig = $parsedScriptSig;
     }
 }

@@ -27,7 +27,7 @@ use Illuminate\Support\HtmlString;
 class BlockController extends Controller
 {
     use AuthorizesRequests, DispatchesJobs, ValidatesRequests, BootstrapThreeNextPreviousButtonRendererTrait;
-    const LIMIT_PER_PAGE        = 25;
+    const LIMIT_PER_PAGE        = 50;
     const TRANSACTIONS_PER_PAGE = 50;
 
     /**

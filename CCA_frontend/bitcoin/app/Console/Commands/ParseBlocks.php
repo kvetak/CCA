@@ -6,20 +6,19 @@
 
 namespace App\Console\Commands;
 
-use App\Model\Base58Encoder;
 use App\Model\Bitcoin\BitcoinBlockModel;
 use App\Model\Bitcoin\BitcoinTransactionModel;
 use App\Model\Bitcoin\Dto\BitcoinBlockDto;
 use App\Model\Bitcoin\Dto\BitcoinTransactionDto;
 use App\Model\Bitcoin\Dto\BitcoinTransactionInputDto;
 use App\Model\Bitcoin\Dto\BitcoinTransactionOutputDto;
-use App\Model\Bitcoin\ScriptPubkeyParser;
+use App\Model\Bitcoin\ScriptParser\ScriptPubkeyParser;
+use App\Model\Bitcoin\ScriptParser\ScriptSigParser;
 use App\Model\Blockchain\Parser\BlockchainParser;
 use App\Model\Blockchain\Parser\BlockDto;
 use App\Model\Blockchain\Parser\PositionDto;
 use App\Model\Blockchain\Parser\TransactionDto;
 use App\Model\Blockchain\PositionManager;
-
 use Carbon\Carbon;
 use Illuminate\Console\Command;
 
@@ -88,6 +87,11 @@ class ParseBlocks extends Command
     private $scriptPubkeyParser;
 
     /**
+     * @var ScriptSigParser
+     */
+    private $scriptSigParser;
+
+    /**
      * Execute the console command.
      */
     public function handle()
@@ -97,6 +101,7 @@ class ParseBlocks extends Command
         $this->bitcoinBlockModel=new BitcoinBlockModel();
         $this->bitcoinTransactionModel=new BitcoinTransactionModel();
         $this->scriptPubkeyParser=new ScriptPubkeyParser();
+        $this->scriptSigParser=new ScriptSigParser($this->scriptPubkeyParser);
 
         if ($this->option("clear"))
         {
@@ -142,7 +147,7 @@ class ParseBlocks extends Command
             $parser->startFrom(new PositionDto($this->name_of_first_file,0));
         }
 
-        $blocks= $parser->parse(1); // TODO: nastavit na hodnotu zadanou na vstupu
+        $blocks= $parser->parse(200); // TODO: nastavit na hodnotu zadanou na vstupu
 
         foreach($blocks as $block)
         {
@@ -203,7 +208,6 @@ class ParseBlocks extends Command
             $sum_of_transaction_outputs=0.0;
             $coinbase=false;
 
-
            $inputDtos=array();
            foreach ($inputs as $input)
            {
@@ -226,7 +230,10 @@ class ParseBlocks extends Command
                    $outputDto->setSpentTxid($txid);
                    $outputDto->setSpentTs($transactionDto->getTime());
 
-                   // TODO: dopočítat adresy do vstupního dto
+                   $script_sig=$input->getScriptSig();
+                   $inputDto->setScriptSig($script_sig);
+                   $inputDto->setParsedScriptSig($this->scriptSigParser->parse($script_sig,$outputDto->getRedeemerDto()));
+
                    $this->bitcoinTransactionModel->updateTransactionOutput($inputDto->getTxid(),$inputDto->getVout(),$outputDto);
                    $sum_of_transaction_inputs += $inputDto->getValue();
                }
@@ -254,14 +261,16 @@ class ParseBlocks extends Command
             $sum_of_inputs += $sum_of_transaction_inputs;
             $sum_of_outputs += $sum_of_transaction_outputs;
 
+            $transaction_fee=0;
             // v coinbase transakci se nepočítají poplatky
             if (!$coinbase) {
                 $transaction_fee = $sum_of_transaction_outputs - $sum_of_transaction_inputs;
                 $sum_of_fees += $transaction_fee;
             }
-            $transactionDto->setSumOfInputs($sum_of_inputs);
-            $transactionDto->setSumOfOutputs($sum_of_outputs);
-            $transactionDto->setSumOfFees($sum_of_fees);
+            $transactionDto->setCoinbase($coinbase);
+            $transactionDto->setSumOfInputs($sum_of_transaction_inputs);
+            $transactionDto->setSumOfOutputs($sum_of_transaction_outputs);
+            $transactionDto->setSumOfFees($transaction_fee);
             $transactionDto->setInputs($inputDtos);
             $transactionDto->setOutputs($outputDtos);
 

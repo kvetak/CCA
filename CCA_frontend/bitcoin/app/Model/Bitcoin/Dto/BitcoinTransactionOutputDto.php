@@ -6,6 +6,8 @@
 
 namespace App\Model\Bitcoin\Dto;
 
+use App\Model\Bitcoin\ScriptParser\Dto\BitcoinScriptRedeemerDto;
+
 /**
  * DTO pro jeden výstup transakce
  *

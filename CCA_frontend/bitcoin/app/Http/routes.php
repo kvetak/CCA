@@ -19,10 +19,10 @@
 | kernel and includes session state, CSRF protection, and more.
 |
 */
-Route::get('',[
-    'as'    => 'homepage',
-    'uses'  => 'BlockController@findAll'
-]);
+
+Route::get('', function (){
+    return redirect("bitcoin/block");
+});
 
 Route::group(['middleware' => ['web'], 'prefix' => '{currency}'], function () {
     Route::get('/block',[

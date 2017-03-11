@@ -16,15 +16,15 @@
                 <caption>Transaction summary</caption>
                 <tr>
                     <td><strong>Transaction</strong></td>
-                    <td>{{$transaction['txid']}}</td>
+                    <td>{{$transactionDto->getTxid()}}</td>
                 </tr>
                 <tr>
                     <td><strong>Block</strong></td>
-                    <td><a href="{{route('block_findone', ['hash' => $transaction['blockhash'], 'currency' => $currency])}}">{{ $transaction['blockhash'] }}</a></td>
+                    <td><a href="{{route('block_findone', ['hash' => $transactionDto->getBlockhash(), 'currency' => $currency])}}">{{ $transactionDto->getBlockhash()}}</a></td>
                 </tr>
                 <tr>
                     <td><strong>Time/Blocktime</strong></td>
-                    <td>{{\Carbon\Carbon::createFromTimestamp($transaction['time'])}} / {{\Carbon\Carbon::createFromTimestamp($transaction['blocktime'])}}</td>
+                    <td>{{\Carbon\Carbon::createFromTimestamp($transactionDto->getBlocktime())}} / {{\Carbon\Carbon::createFromTimestamp($transactionDto->getBlocktime())}}</td>
                 </tr>
                 <tr>
                     <td><strong>Confirmations</strong></td>
@@ -32,7 +32,7 @@
                 </tr>
                 <tr>
                     <td><strong>Visualization</strong></td>
-                    <td><a href="{{route('transaction_visualize', ['txid' => $transaction['txid'], 'currency'=>$currency])}}">Transaction graph</a></td>
+                    <td><a href="{{route('transaction_visualize', ['txid' => $transactionDto->getTxid(), 'currency'=>$currency])}}">Transaction graph</a></td>
                 </tr>
             </table>
         </div>
