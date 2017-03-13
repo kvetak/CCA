@@ -20,12 +20,11 @@
             @else
                 @foreach( $transactionDto->getInputs()  as $vin)
                 <?php
-                      $address = $vin->getAddresses()[0];
-//                    $address    = $vin['addresses'][0];
+                      $address = $vin->getInputAddress();
 //                        $tag        = Arrays::get(Arrays::filterBy($tags, 'address', $address), '0.tags.0.tag', null);
 //                        $tagUrl     = Arrays::get(Arrays::filterBy($tags, 'address', $address), '0.tags.0.url', null);
                 ?>
-                <li><a href="{{route('transaction_findone',['txid'=>$transactionDto->getTxid(), 'currency' => $currency])}}" class="glyphicon glyphicon-arrow-left"/>&nbsp;
+                <li><a href="{{route('transaction_findone',['txid'=>  $vin->getTxid(), 'currency' => $currency])}}" class="glyphicon glyphicon-arrow-left"/>&nbsp;
                     @if( ! empty($tag) )
                         <a href="{{route('address_findone',['address'=> $address, 'currency' => $currency])}}">{{str_limit($address, 15)}}
                             @if(!empty($tagUrl))
@@ -50,8 +49,7 @@
             @foreach($transactionDto->getOutputs() as $vout)
             <li>
                 <?php
-                    $address=$vout->getRedeemerDto()->getAddresses()[0];
-//                    $address = $vout['addresses'][0];
+                    $address=$vout->getOutputAddress();
 //                    $tag        = Arrays::get(Arrays::filterBy($tags, 'address', $address), '0.tags.0.tag', null);
 //                    $tagUrl     = Arrays::get(Arrays::filterBy($tags, 'address', $address), '0.tags.0.url', null);
                 ?>
@@ -68,6 +66,8 @@
                 </a> <small>({{$vout->getValue()}} {{CurrencyType::currencyUnit($currency)}})</small>
                 @if($vout->isSpent())
                     <a href="{{route('transaction_findone', ['txid' =>$vout->getSpentTxid(), 'currency' => $currency])}}" class="glyphicon glyphicon-arrow-right"></a>
+                @else
+                    <span style="color:red;">unspend</span>
                 @endif
             </li>
             @endforeach
@@ -78,7 +78,7 @@
 <div class="row">
     <div class="col-md-5 col-md-offset-2">
     @if( !$transactionDto->isCoinbase())
-        Unique input addresses: {{$transactionDto->getUniqueInputs()}}
+        Unique input addresses: {{$transactionDto->getUniqueInputAddresses()}}
     @endif
 </div>
 </div>

@@ -73,7 +73,7 @@ class BitcoinTransactionDto
      * Počet unikátních adres, použitých na vstupech transakcí
      * @var int
      */
-    private $unique_inputs;
+    private $unique_input_addresses;
 
     /**
      * @return int
@@ -222,17 +222,17 @@ class BitcoinTransactionDto
     /**
      * @return int
      */
-    public function getUniqueInputs()
+    public function getUniqueInputAddresses()
     {
-        return $this->unique_inputs;
+        return $this->unique_input_addresses;
     }
 
     /**
-     * @param int $unique_inputs
+     * @param int $unique_input_addresses
      */
-    public function setUniqueInputs($unique_inputs)
+    public function setUniqueInputAddresses($unique_input_addresses)
     {
-        $this->unique_inputs = $unique_inputs;
+        $this->unique_input_addresses = $unique_input_addresses;
     }
 
     /**

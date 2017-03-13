@@ -71,10 +71,21 @@ abstract class AbstractScriptParser
      */
     protected function get_address_from_pubkey($public_key)
     {
+        return $this->get_address_from_hash($this->ripemd160_hash($public_key));
+    }
+
+    /**
+     * Vypočte čast hashe veřejného klíče po provedení ripemd160
+     *
+     * @param $public_key string hex
+     * @return string bin
+     */
+    protected function ripemd160_hash($public_key)
+    {
         $SHA_HASH = hash("sha256",hex2bin($public_key));
         $RIPEMD_HASH = hash("ripemd160",hex2bin($SHA_HASH));
 
-        return $this->get_address_from_hash($RIPEMD_HASH);
+        return $RIPEMD_HASH;
     }
 
     /**

@@ -8,10 +8,12 @@ namespace App\Console\Commands;
 
 use App\Model\Bitcoin\BitcoinBlockModel;
 use App\Model\Bitcoin\BitcoinTransactionModel;
+use App\Model\Bitcoin\BitcoinUtils;
 use App\Model\Bitcoin\Dto\BitcoinBlockDto;
 use App\Model\Bitcoin\Dto\BitcoinTransactionDto;
 use App\Model\Bitcoin\Dto\BitcoinTransactionInputDto;
 use App\Model\Bitcoin\Dto\BitcoinTransactionOutputDto;
+use App\Model\Bitcoin\ScriptParser\Dto\BitcoinScriptRedeemerDto;
 use App\Model\Bitcoin\ScriptParser\ScriptPubkeyParser;
 use App\Model\Bitcoin\ScriptParser\ScriptSigParser;
 use App\Model\Blockchain\Parser\BlockchainParser;
@@ -179,7 +181,6 @@ class ParseBlocks extends Command
         $sum_of_inputs=0.0;
         $sum_of_outputs=0.0;
         $sum_of_fees=0.0;
-        $unique_inputs=0;
 
         $height=0; // height genesis bloku
         // pokud se nejedná se o genesis block
@@ -206,6 +207,7 @@ class ParseBlocks extends Command
 
             $sum_of_transaction_inputs=0.0;
             $sum_of_transaction_outputs=0.0;
+            $input_addresses=array();
             $coinbase=false;
 
            $inputDtos=array();
@@ -232,6 +234,13 @@ class ParseBlocks extends Command
 
                    $script_sig=$input->getScriptSig();
                    $inputDto->setScriptSig($script_sig);
+
+                   $input_address=$outputDto->getOutputAddress();
+                   if ($input_address != null){
+                       $input_addresses[]=$input_address;
+                       $inputDto->setInputAddress($input_address);
+                   }
+
                    $inputDto->setParsedScriptSig($this->scriptSigParser->parse($script_sig,$outputDto->getRedeemerDto()));
 
                    $this->bitcoinTransactionModel->updateTransactionOutput($inputDto->getTxid(),$inputDto->getVout(),$outputDto);
@@ -252,7 +261,9 @@ class ParseBlocks extends Command
                $script_pubkey=$output->getScriptPubkey();
 
                $outputDto->setScriptPubkey($script_pubkey);
-               $outputDto->setRedeemerDto($this->scriptPubkeyParser->parse($script_pubkey));
+               $redeemerDto=$this->scriptPubkeyParser->parse($script_pubkey);
+               $outputDto->setOutputAddress(BitcoinUtils::serialize_address($redeemerDto));
+               $outputDto->setRedeemerDto($redeemerDto);
 
                $sum_of_transaction_outputs += $outputDto->getValue();
                $outputDtos[]=$outputDto;
@@ -273,6 +284,7 @@ class ParseBlocks extends Command
             $transactionDto->setSumOfFees($transaction_fee);
             $transactionDto->setInputs($inputDtos);
             $transactionDto->setOutputs($outputDtos);
+            $transactionDto->setUniqueInputAddresses(count(array_unique($input_addresses)));
 
             $this->bitcoinTransactionModel->storeNode($transactionDto);
         }

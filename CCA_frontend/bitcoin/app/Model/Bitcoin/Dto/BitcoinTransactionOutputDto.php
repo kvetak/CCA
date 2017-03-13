@@ -61,6 +61,12 @@ class BitcoinTransactionOutputDto
     private $spentTs;
 
     /**
+     * Serializovaná výstupní adresa
+     * @var string
+     */
+    private $outputAddress;
+
+    /**
      * @return BitcoinScriptRedeemerDto
      */
     public function getRedeemerDto()
@@ -180,5 +186,21 @@ class BitcoinTransactionOutputDto
     public function setScriptPubkey($script_pubkey)
     {
         $this->script_pubkey = $script_pubkey;
+    }
+
+    /**
+     * @return string
+     */
+    public function getOutputAddress()
+    {
+        return $this->outputAddress;
+    }
+
+    /**
+     * @param string $outputAddress
+     */
+    public function setOutputAddress($outputAddress)
+    {
+        $this->outputAddress = $outputAddress;
     }
 }

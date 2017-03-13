@@ -28,7 +28,7 @@ class BitcoinTransactionModel extends BaseBitcoinModel
         DB_TRANS_SUM_OF_INPUTS="sum_of_inputs",
         DB_TRANS_SUM_OF_OUTPUTS="sum_of_outputs",
         DB_TRANS_SUM_OF_FEES="sum_of_fees",
-        DB_TRANS_UNIQUE_INPUTS="unique_inputs",
+        DB_TRANS_UNIQUE_INPUT_ADDRESSES="unique_input_addresses",
         DB_COINBASE="coinbase";
 
     /**
@@ -56,7 +56,7 @@ class BitcoinTransactionModel extends BaseBitcoinModel
         $array[self::DB_TRANS_SUM_OF_INPUTS]=$dto->getSumOfInputs();
         $array[self::DB_TRANS_SUM_OF_OUTPUTS]=$dto->getSumOfOutputs();
         $array[self::DB_TRANS_SUM_OF_FEES]=$dto->getSumOfFees();
-        $array[self::DB_TRANS_UNIQUE_INPUTS]=$dto->getUniqueInputs();
+        $array[self::DB_TRANS_UNIQUE_INPUT_ADDRESSES]=$dto->getUniqueInputAddresses();
         $array[self::DB_COINBASE]=$dto->isCoinbase();
 
         return $array;
@@ -75,7 +75,7 @@ class BitcoinTransactionModel extends BaseBitcoinModel
         $dto->setSumOfInputs($array[self::DB_TRANS_SUM_OF_INPUTS]);
         $dto->setSumOfOutputs($array[self::DB_TRANS_SUM_OF_OUTPUTS]);
         $dto->setSumOfFees($array[self::DB_TRANS_SUM_OF_FEES]);
-        $dto->setUniqueInputs($array[self::DB_TRANS_UNIQUE_INPUTS]);
+        $dto->setUniqueInputAddresses($array[self::DB_TRANS_UNIQUE_INPUT_ADDRESSES]);
         $dto->setCoinbase($array[self::DB_COINBASE]);
 
         return $dto;

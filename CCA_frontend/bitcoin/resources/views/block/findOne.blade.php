@@ -11,7 +11,9 @@
     <div class="col-md-2">
         <nav>
             <ul class="pager">
-                <li class="previous"><a href="{!! route('block_findone', ['hash' => $block->getPreviousBlockHash(), 'currency' => $currency]) !!}"><span aria-hidden="true">&larr;</span> Previous block</a></li>
+                @if($block->getHeight() > 0)
+                    <li class="previous"><a href="{!! route('block_findone', ['hash' => $block->getPreviousBlockHash(), 'currency' => $currency]) !!}"><span aria-hidden="true">&larr;</span> Previous block</a></li>
+                @endif
             </ul>
         </nav>
     </div>
@@ -28,7 +30,11 @@
             </tr>
             <tr>
                 <td><strong>Previous block</strong></td>
-                <td><small><a href="{!! route('block_findone', ['hash' => $block->getPreviousBlockHash(), 'currency' => $currency]) !!}">{{$block->getPreviousBlockHash()}}</a></small></td>
+                @if($block->getHeight() > 0)
+                    <td><small><a href="{!! route('block_findone', ['hash' => $block->getPreviousBlockHash(), 'currency' => $currency]) !!}">{{$block->getPreviousBlockHash()}}</a></small></td>
+                @else
+                    <td><small>{{$block->getPreviousBlockHash()}}</small></td>
+                @endif
             </tr>
             <tr>
                 <td><strong>Height</strong></td>

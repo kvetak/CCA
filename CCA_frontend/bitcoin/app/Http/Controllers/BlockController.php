@@ -1,20 +1,12 @@
 <?php
 namespace App\Http\Controllers;
 
-use App\Model\Bitcoin\BitcoinBlockModel;
-
-use App\Model\Bitcoin\BitcoinTransactionModel;
 use App\Model\CurrencyType;
-use App\Model\Litecoin\LitecoinTransactionModel;
-use Hamcrest\Text\StringEndsWith;
-use Illuminate\Foundation\Bus\DispatchesJobs;
-use Illuminate\Pagination\AbstractPaginator;
-use Illuminate\Pagination\BootstrapThreeNextPreviousButtonRendererTrait;
-use Illuminate\Routing\Controller as BaseController;
-use Illuminate\Foundation\Validation\ValidatesRequests;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
+use Illuminate\Foundation\Bus\DispatchesJobs;
+use Illuminate\Foundation\Validation\ValidatesRequests;
+use Illuminate\Pagination\BootstrapThreeNextPreviousButtonRendererTrait;
 use Illuminate\Pagination\LengthAwarePaginator;
-use Illuminate\Support\HtmlString;
 
 /**
  * Radič pre prácu s blokmi.

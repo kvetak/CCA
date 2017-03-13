@@ -42,6 +42,12 @@ class BitcoinTransactionInputDto
     private $parsedScriptSig;
 
     /**
+     * Ze které se brali BTC na tomto vstupu transakce
+     * @var string
+     */
+    private $inputAddress;
+
+    /**
      * @return int
      */
     public function getTxid()
@@ -119,5 +125,21 @@ class BitcoinTransactionInputDto
     public function setParsedScriptSig($parsedScriptSig)
     {
         $this->parsedScriptSig = $parsedScriptSig;
+    }
+
+    /**
+     * @return string
+     */
+    public function getInputAddress()
+    {
+        return $this->inputAddress;
+    }
+
+    /**
+     * @param string $inputAddress
+     */
+    public function setInputAddress($inputAddress)
+    {
+        $this->inputAddress = $inputAddress;
     }
 }

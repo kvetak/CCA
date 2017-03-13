@@ -16,6 +16,7 @@ namespace App\Model\Blockchain\Parser;
 class InputTransactionDto
 {
     /**
+     * Hash transakce ze které pocházejí BTC použité na tomto vstupu
      * @var Hash - hash of past transaction
      */
     private $hash;

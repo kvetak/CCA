@@ -18,6 +18,7 @@ use Underscore\Types\Arrays;
  * @package App\Http\Controllers
  *
  * @author Tomas Drozda <tomas.drozda@icloud.com>
+ * TODO: dodělat podporů tagů
  */
 class TransactionController extends Controller
 {
@@ -83,13 +84,13 @@ class TransactionController extends Controller
      */
     public function outputs($currency, $txid)
     {
-        $transactionModelClass          = CurrencyType::transactionModel($currency);
-        $addressModelClass              = CurrencyType::addressModel($currency);
+        $transactionModel          = CurrencyType::transactionModel($currency);
+        $addressModel              = CurrencyType::addressModel($currency);
         $result = [
             'name'      => 'source',
             'children'  => [],
         ];
-        $transaction = $transactionModelClass::findByTxId($txid, [
+        $transaction = $transactionModel->findByTxId($txid, [
             'inputsOutputs.type'        => true,
             'inputsOutputs.addresses'   => true,
             'inputsOutputs.n'           => true,
@@ -100,25 +101,22 @@ class TransactionController extends Controller
         if(empty($transaction)){
             throw new NotFoundHttpException();
         }
-        $outputs        = Arrays::filterBy($transaction['inputsOutputs'], 'type', InputsOutputsType::TYPE_OUTPUT);
-        $sumOfOutputs   = 0.0;
-        foreach($outputs as $output){
-            $address = $output['addresses'][0];
+
+        foreach($transaction->getOutputs() as $output){
+            $address = $output->getOutputAddress();
             $element = [
                 'name'          => $address,
-                'value'         => $output['value'],
-                'redeemed_tx'   => $output['spent'] ? [$output['spentTxid']] : [],
+                'value'         => $output->getValue(),
+                'redeemed_tx'   => $output->isSpent() ? [$output->getSpentTxid()] : [],
             ];
-            $addressModel       = new $addressModelClass($address);
-            $tags = $addressModel->getTags();
+           /* $tags = $addressModel->getTags();
             if(count($tags)){
                 $element['tag']     = Arrays::get($tags, '0.tag', null);
                 $element['url_tag'] = Arrays::get($tags, '0.url');
-            }
+            }*/
             $result['children'][]   = $element;
-            $sumOfOutputs           += (double)$output['value'];
         }
-        $result['value'] = $sumOfOutputs;
+        $result['value'] = $transaction->getSumOfOutputs();
         /**
          * Serializacia vysledku do formatu JSON.
          */

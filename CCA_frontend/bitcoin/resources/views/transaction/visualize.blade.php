@@ -2,7 +2,7 @@
 @section('content')
     <script src="https://d3js.org/d3.v3.min.js" charset="utf-8"></script>
     <div class="page-header">
-        <h1>Transaction visualization<br/><small>{{$transaction['txid']}}</small></h1>
+        <h1>Transaction visualization<br/><small>{{$transaction->getTxid()}}</small></h1>
     </div>
     <style type="text/css">
         .node circle {
@@ -73,7 +73,7 @@
              **/
             var radius = function(d) {
                 return Math.min(25, Math.max(20 * (d.value / root.value), 5.0));
-            }
+            };
             var currency = "{{$currency}}";
             var currencyUnit = "{{\App\Model\CurrencyType::currencyUnit($currency)}}";
             var depth ;
@@ -85,7 +85,7 @@
             /**
              * ID transakcie kde je pociatok grafu.
              */
-            var rootTxId =  '{{$transaction['txid']}}';
+            var rootTxId =  '{{$transaction->getTxid()}}';
             /**
              * Mapovanie uzlov grafu.
              * @type {Array}
@@ -261,8 +261,8 @@
 
                 for (var i = 0; i < node.children.length; ++i) {
                     recursive(node.children[i], func);
-                };
-            }
+                }
+            };
 
 
             function click(node, nodeEnter) {

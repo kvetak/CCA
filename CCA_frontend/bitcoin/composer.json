@@ -13,7 +13,8 @@
         "danielstjules/stringy": "~2.2",
         "league/monga": "~1.2",
         "duzun/hquery": "~1.5",
-        "graphaware/neo4j-php-client": "^4.0"
+        "graphaware/neo4j-php-client": "^4.0",
+        "mdanter/ecc": "^0.4.2"
     },
     "require-dev": {
         "fzaninotto/faker": "~1.4",
