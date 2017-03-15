@@ -103,6 +103,16 @@ class BitcoinAddressModel extends BaseBitcoinModel
     }
 
     /**
+     * Smaže všechny bloky
+     */
+    public function deleteAllNodes()
+    {
+        $this->deleteAll();
+    }
+
+
+
+    /**
      * Nalezení informací o BTC adrese
      *
      * @param $address string - BTC adresa

@@ -82,10 +82,9 @@ abstract class BaseNeoModel
      * Vrací uzly z databáze, seřazené od nejnovějšího
      * @param int $limit - Maximální počet uzlů, který bude vrácen
      * @param int $skip - počet uzlů který bude přeskočen od začátku výstupu
-     * @param array $items      - definicia projekcie
      * @return array <ID ; array <property_name ; property_value>>;
      */
-    protected function findAllNodes($limit = 0, $skip = 0, $items = [], $order_by=null, $order_datatype=null)
+    protected function findAllNodes($limit = 0, $skip = 0, $order_by=null, $order_datatype=null)
     {
         $query_result=$this->neoConnection->run("MATCH (n:".$this->getEffectiveNodeName().") 
             return n "
@@ -253,6 +252,17 @@ abstract class BaseNeoModel
     protected function deleteAll()
     {
         $this->neoConnection->run("MATCH (n:".$this->getEffectiveNodeName().") delete n");
+    }
+
+    /**
+     * Smaže uzly odpovídající dané podmínce
+     * @param $propety
+     * @param $value
+     */
+    protected function delete($propety, $value)
+    {
+        $query="MATCH (n:".$this->getEffectiveNodeName().") WHERE n.".$propety." = \"".$value."\" delete n";
+        $this->neoConnection->run($query);
     }
 
     /**

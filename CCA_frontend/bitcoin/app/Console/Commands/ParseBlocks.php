@@ -8,6 +8,7 @@ namespace App\Console\Commands;
 
 use App\Model\Bitcoin\BitcoinAddressModel;
 use App\Model\Bitcoin\BitcoinBlockModel;
+use App\Model\Bitcoin\BitcoinOutOfOrderBlockModel;
 use App\Model\Bitcoin\BitcoinTransactionModel;
 use App\Model\Bitcoin\BitcoinUtils;
 use App\Model\Bitcoin\Dto\BitcoinAddressDto;
@@ -35,6 +36,7 @@ use Illuminate\Console\Command;
 class ParseBlocks extends Command
 {
     const COINBASE_N=4294967295;
+    const GENESIS_BLOCK_PREVIOUS_HASH="0000000000000000000000000000000000000000000000000000000000000000";
 
     /**
      * Název a popis konzolového příkazu
@@ -43,6 +45,7 @@ class ParseBlocks extends Command
     protected $signature = 'blocks:parse 
         {path? : Path to directory, where blockchain is located}
         {--clear : Delete blockchain in database and clear last parsing location}
+        {--totalClear : Delete everything in database}
         {--first_file=blk00000.dat : Name of first file of blockchain (take effect only when last parsing location is empty)}
         {--number_of_blocks=100 : Number of blocks, that should be parsed in one run}';
 
@@ -90,6 +93,11 @@ class ParseBlocks extends Command
     private $bitcoinAddressModel;
 
     /**
+     * @var BitcoinOutOfOrderBlockModel
+     */
+    private $bitcoinOutOfOrderBlockModel;
+
+    /**
      * @var ScriptPubkeyParser
      */
     private $scriptPubkeyParser;
@@ -109,12 +117,19 @@ class ParseBlocks extends Command
         $this->bitcoinBlockModel=new BitcoinBlockModel();
         $this->bitcoinTransactionModel=new BitcoinTransactionModel();
         $this->bitcoinAddressModel=new BitcoinAddressModel();
+        $this->bitcoinOutOfOrderBlockModel= new BitcoinOutOfOrderBlockModel();
         $this->scriptPubkeyParser=new ScriptPubkeyParser();
         $this->scriptSigParser=new ScriptSigParser($this->scriptPubkeyParser);
 
         if ($this->option("clear"))
         {
             $this->clearDatabase();
+            return;
+        }
+
+        if ($this->option("totalClear"))
+        {
+            $this->totalClearDatabase();
             return;
         }
 
@@ -156,11 +171,24 @@ class ParseBlocks extends Command
             $parser->startFrom(new PositionDto($this->name_of_first_file,0));
         }
 
-        $blocks= $parser->parse(100); // TODO: nastavit na hodnotu zadanou na vstupu
+        $blocks= $parser->parse(200); // TODO: nastavit na hodnotu zadanou na vstupu
 
-        foreach($blocks as $block)
+        $processed_blocks=array();
+        try {
+            foreach ($blocks as $block) {
+                $processed_blocks[] = $this->process_block($block);
+            }
+        }
+        catch (\Exception $e)
         {
-            $this->process_block($block);
+            // pokud nastala chyba, proveď rollback - smazat všechny uzly, které byly vloženy
+            foreach ($processed_blocks as $blockhash)
+            {
+                $this->bitcoinTransactionModel->deleteByHash($blockhash);
+                $this->bitcoinBlockModel->deleteByHash($blockhash);
+                $this->bitcoinOutOfOrderBlockModel->deleteByBlockhash($blockhash);
+            }
+            throw $e;
         }
         $this->positionManager->store($parser->getPosition());
     }
@@ -191,10 +219,19 @@ class ParseBlocks extends Command
 
         $height=0; // height genesis bloku
         // pokud se nejedná se o genesis block
-        if ($bitcoinBlockDto->getPreviousBlockHash() != "0000000000000000000000000000000000000000000000000000000000000000")
+        if ($bitcoinBlockDto->getPreviousBlockHash() != self::GENESIS_BLOCK_PREVIOUS_HASH)
         {
             // nastavení zřetězení bloků a height
-            $previousBlock = $this->bitcoinBlockModel->findByHash($bitcoinBlockDto->getPreviousBlockHash());
+            $previousBlock = $this->bitcoinBlockModel->existByHash($bitcoinBlockDto->getPreviousBlockHash());
+            /*
+             * pokud předchozí blok není v databázi, uloží se aktuální blok do nezpracovaných bloků
+             * a bude zpracován později až bude předchozí blok uložen v databázi
+             */
+            if ($previousBlock == null)
+            {
+                $this->bitcoinOutOfOrderBlockModel->insertBlock($blockhash, $bitcoinBlockDto->getPreviousBlockHash(), $blockDto);
+                return $blockhash;
+            }
             $height = $previousBlock->getHeight() + 1;
             $previousBlock->setNextBlockHash($bitcoinBlockDto->getHash());
             $this->bitcoinBlockModel->updateBlock($previousBlock);
@@ -303,7 +340,7 @@ class ParseBlocks extends Command
             $transactionDto->setUniqueInputAddresses(count(array_unique($input_addresses)));
 
             // uložení změn stavů na účtech
-           $this->store_address_balance_changes($address_balances,$txid);
+            $this->store_address_balance_changes($address_balances,$txid);
 
             $this->bitcoinTransactionModel->storeNode($transactionDto);
         }
@@ -312,6 +349,15 @@ class ParseBlocks extends Command
         $bitcoinBlockDto->setSumOfFees($sum_of_fees);
 
         $this->bitcoinBlockModel->storeNode($bitcoinBlockDto);
+
+        // pokud je v databázi nezpracovaný blok, který navazuje na ten aktuální, zpracuj jej
+        $outOfOrderBlok=$this->bitcoinOutOfOrderBlockModel->exists($blockhash);
+        if ($outOfOrderBlok != null)
+        {
+            $outOfOrderBlockhahs=$this->process_block($outOfOrderBlok);
+            $this->bitcoinOutOfOrderBlockModel->deleteByBlockhash($outOfOrderBlockhahs);
+        }
+        return $blockhash;
     }
 
     /**
@@ -515,6 +561,7 @@ class ParseBlocks extends Command
     /**
      * Vymazání všech bloků z databáze
      * Vymaže uloženou pozici parsování
+     * Ponechá v databázi adresy, tagy, clustery apod.
      */
     private function clearDatabase()
     {
@@ -522,5 +569,18 @@ class ParseBlocks extends Command
         $this->bitcoinBlockModel->deleteAllNodes();
         $this->bitcoinTransactionModel->deleteAllNodes();
         $this->bitcoinAddressModel->clearAddresses();
+        $this->bitcoinOutOfOrderBlockModel->deleteAllNodes();
+    }
+
+    /**
+     * Smaže úplně všechny údeja z databáze
+     */
+    private function totalClearDatabase()
+    {
+        $this->positionManager->deletePosition();
+        $this->bitcoinBlockModel->deleteAllNodes();
+        $this->bitcoinTransactionModel->deleteAllNodes();
+        $this->bitcoinAddressModel->deleteAllNodes();
+        $this->bitcoinOutOfOrderBlockModel->deleteAllNodes();
     }
 }

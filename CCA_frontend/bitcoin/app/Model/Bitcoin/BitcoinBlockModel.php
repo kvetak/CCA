@@ -115,6 +115,15 @@ class BitcoinBlockModel extends BaseBitcoinModel
     }
 
     /**
+     * Smaže blok s daným hashem
+     * @param hash String - hash bloku
+     */
+    public function deleteByHash($hash)
+    {
+        $this->delete(self::DB_HASH,$hash);
+    }
+
+    /**
      * Aktualizace hodnot v bloku
      * @param BitcoinBlockDto $dto
      */
@@ -128,12 +137,11 @@ class BitcoinBlockModel extends BaseBitcoinModel
      * Vrací uzly z databáze, seřazené od nejnovějšího
      * @param int $limit - Maximální počet uzlů, který bude vrácen
      * @param int $skip - počet uzlů který bude přeskočen od začátku výstupu
-     * @param array $items      - definicia projekcie
      * @return array <ID ; array <property_name ; property_value>>;
      */
-    public function findAll($limit = 0, $skip = 0, $items = [])
+    public function findAll($limit = 0, $skip = 0)
     {
-       $data=$this->findAllNodes($limit,$skip,$items, self::DB_HEIGHT, BaseNeoModel::DATATYPE_INTEGER);
+       $data=$this->findAllNodes($limit,$skip, self::DB_HEIGHT, BaseNeoModel::DATATYPE_INTEGER);
        $blocks=array();
 
        foreach ($data as $block_data)

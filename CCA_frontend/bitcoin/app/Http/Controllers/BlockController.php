@@ -62,13 +62,7 @@ class BlockController extends Controller
         $this->setPaginator(new LengthAwarePaginator([], $total,self::LIMIT_PER_PAGE));
         $this->paginator->setPath('block');
         $skip       = ($this->currentPage() - 1) * self::LIMIT_PER_PAGE;
-        $blocks     = $blockModel->findAll(self::LIMIT_PER_PAGE, $skip, [
-            'height'            => true,
-            'hash'              => true,
-            'time'              => true,
-            'transactions'      => true,
-            'sum_of_outputs'    => true
-        ]);
+        $blocks     = $blockModel->findAll(self::LIMIT_PER_PAGE, $skip);
         $pagination = $this->renderPagination(True);
         return view('block/findAll', compact('blocks', 'pagination', 'total', 'currency'));
     }

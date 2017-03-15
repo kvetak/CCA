@@ -20,7 +20,7 @@ class BitcoinTransactionModel extends BaseBitcoinModel
     const NODE_NAME="transaction";
 
     const DB_TRANS_TXID="txid",
-        DB_TRANS_BLOCKHAHS="blockhash",
+        DB_TRANS_BLOCKHASH="blockhash",
         DB_TRANS_TIME="time",
         DB_TRANS_INPUTS="inputs",
         DB_TRANS_OUTPUTS="outputs",
@@ -47,7 +47,7 @@ class BitcoinTransactionModel extends BaseBitcoinModel
         $array=array();
 
         $array[self::DB_TRANS_TXID]=$dto->getTxid();
-        $array[self::DB_TRANS_BLOCKHAHS]=$dto->getBlockhash();
+        $array[self::DB_TRANS_BLOCKHASH]=$dto->getBlockhash();
         $array[self::DB_TRANS_TIME]=$dto->getTime();
         $array[self::DB_TRANS_INPUTS]=$this->input_output_encode($dto->getInputs());
         $array[self::DB_TRANS_OUTPUTS]=$this->input_output_encode($dto->getOutputs());
@@ -65,7 +65,7 @@ class BitcoinTransactionModel extends BaseBitcoinModel
         $dto = new BitcoinTransactionDto();
 
         $dto->setTxid($array[self::DB_TRANS_TXID]);
-        $dto->setBlockhash($array[self::DB_TRANS_BLOCKHAHS]);
+        $dto->setBlockhash($array[self::DB_TRANS_BLOCKHASH]);
         $dto->setTime($array[self::DB_TRANS_TIME]);
         $dto->setInputs($this->input_output_decode($array[self::DB_TRANS_INPUTS]));
         $dto->setOutputs($this->input_output_decode($array[self::DB_TRANS_OUTPUTS]));
@@ -96,6 +96,16 @@ class BitcoinTransactionModel extends BaseBitcoinModel
     public function deleteAllNodes()
     {
         $this->deleteAll();
+    }
+
+
+    /**
+     * Smaže všechny transakce, které patří do daného bloku
+     * @param hash String - hash bloku
+     */
+    public function deleteByHash($hash)
+    {
+        $this->delete(self::DB_TRANS_BLOCKHASH,$hash);
     }
 
     /**
@@ -186,7 +196,7 @@ class BitcoinTransactionModel extends BaseBitcoinModel
      */
     public function findByBlockHash($blockHash, $limit = 0, $skip = 0)
     {
-        $data=$this->find(self::DB_TRANS_BLOCKHAHS,$blockHash,$limit,$skip);
+        $data=$this->find(self::DB_TRANS_BLOCKHASH,$blockHash,$limit,$skip);
         $result=array();
         foreach ($data as $transaction)
         {
