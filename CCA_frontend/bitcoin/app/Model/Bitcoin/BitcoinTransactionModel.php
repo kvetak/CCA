@@ -24,7 +24,6 @@ class BitcoinTransactionModel extends BaseBitcoinModel
         DB_TRANS_TIME="time",
         DB_TRANS_INPUTS="inputs",
         DB_TRANS_OUTPUTS="outputs",
-        DB_TRANS_BLOCKTIME="blocktime",
         DB_TRANS_SUM_OF_INPUTS="sum_of_inputs",
         DB_TRANS_SUM_OF_OUTPUTS="sum_of_outputs",
         DB_TRANS_SUM_OF_FEES="sum_of_fees",
@@ -52,7 +51,6 @@ class BitcoinTransactionModel extends BaseBitcoinModel
         $array[self::DB_TRANS_TIME]=$dto->getTime();
         $array[self::DB_TRANS_INPUTS]=$this->input_output_encode($dto->getInputs());
         $array[self::DB_TRANS_OUTPUTS]=$this->input_output_encode($dto->getOutputs());
-        $array[self::DB_TRANS_BLOCKTIME]=$dto->getBlocktime();
         $array[self::DB_TRANS_SUM_OF_INPUTS]=$dto->getSumOfInputs();
         $array[self::DB_TRANS_SUM_OF_OUTPUTS]=$dto->getSumOfOutputs();
         $array[self::DB_TRANS_SUM_OF_FEES]=$dto->getSumOfFees();
@@ -71,7 +69,6 @@ class BitcoinTransactionModel extends BaseBitcoinModel
         $dto->setTime($array[self::DB_TRANS_TIME]);
         $dto->setInputs($this->input_output_decode($array[self::DB_TRANS_INPUTS]));
         $dto->setOutputs($this->input_output_decode($array[self::DB_TRANS_OUTPUTS]));
-        $dto->setBlocktime($array[self::DB_TRANS_BLOCKTIME]);
         $dto->setSumOfInputs($array[self::DB_TRANS_SUM_OF_INPUTS]);
         $dto->setSumOfOutputs($array[self::DB_TRANS_SUM_OF_OUTPUTS]);
         $dto->setSumOfFees($array[self::DB_TRANS_SUM_OF_FEES]);
@@ -126,6 +123,24 @@ class BitcoinTransactionModel extends BaseBitcoinModel
             throw new TransactionNotFoundException("Not found transaction with hash (txid) = ".$txId);
         }
         return $this->array_to_dto($data);
+    }
+
+    /**
+     * Vyhledá několik transakcí podle jejich TXID
+     *
+     * @param array $txId - pole $txid, které se mají vyhledat
+     * @return array <BitcoinTransactionDto>
+     */
+    public function findByMultipleTxid(array $txId)
+    {
+        $array=$this->findByArray(self::DB_TRANS_TXID,$txId,self::DB_TRANS_TIME);
+
+        $result=array();
+        foreach($array as $node_array)
+        {
+            $result[]=$this->array_to_dto($node_array);
+        }
+        return $result;
     }
 
     /**
@@ -195,30 +210,6 @@ class BitcoinTransactionModel extends BaseBitcoinModel
 //        }
 
         return $result;
-    }
-
-    /**
-     * Ziskanie poctu transakcii, na ktorych sa podielal uzivatel so zadanou adresou.
-     * @param $address   - adresa Bitcoin uzivatela
-     * @return int
-     */
-    public static function getTransactionsCount($address)
-    {
-        $c      = get_called_class();
-        $model  = new $c;
-        return $model->collection()->count($model->getConditionsByAddress($address));
-    }
-
-    /**
-     * Zostavenie podmienok pre vyhladavanie v kolekcii podla adresy.
-     * @param $address
-     * @return array
-     */
-    public function getConditionsByAddress($address)
-    {
-        return [
-            'inputsOutputs.addresses' => $address,
-        ];
     }
 
     /**
@@ -323,15 +314,5 @@ class BitcoinTransactionModel extends BaseBitcoinModel
             $addresses = array_merge($addresses, $input['addresses']);
         }
         return array_unique($addresses);
-    }
-
-    private function input_output_encode($val)
-    {
-        return base64_encode(serialize($val));
-    }
-
-    private function input_output_decode($val)
-    {
-        return unserialize(base64_decode($val));
     }
 }

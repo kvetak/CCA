@@ -2,8 +2,8 @@
 
 namespace App\Model\Bitcoin;
 
-use App\Model\CurrencyType;
-use Illuminate\Support\Arr;
+use App\Model\Bitcoin\Dto\BitcoinAddressDto;
+use App\Model\Exceptions\TransactionNotFoundException;
 use Underscore\Types\Arrays;
 
 /**
@@ -22,225 +22,144 @@ class BitcoinAddressModel extends BaseBitcoinModel
     const NODE_NAME="address";
 
     /**
-     * Typy zdrojov tagov adres.
+     * Názvy jednotlivých atributů modelu, tak jak jsou uloženy v databázi
      */
-    const BLOCKCHAININFO_SOURCE = 1;
+    const DB_ADDRESS="address",
+        DB_PUBKEY="pubkey",
+        DB_BALANCE="balance",
+        DB_TAGS="tags",
+        DB_TRANSACTIONS="transactions",
+        DB_CLUSTER_ID="cluster_id";
+
     /**
      * Typ akym bol tag nahrany do kolekcie.
      */
     const WEB_SOURCE_TYPE = 1, //ziskany z web. stranky
-         USER_INPUT_TYPE = 2; //uzivatelom zadany
+        USER_INPUT_TYPE = 2; //uzivatelom zadany
 
-    /**
-     * Adresa
-     * @var null
-     */
-    protected $address;
-    /**
-     * Obsah v kolekcii pre zadanu adresu.
-     * @var
-     */
-    protected $addressModel;
-    /**
-     * Priznak ci sa menil stav na ucte od nacitania modelu.
-     * @var bool
-     */
-    protected $balanceChanged;
+    private function array_to_dto($array)
+    {
+        $dto=new BitcoinAddressDto();
+
+        $dto->setAddress($array[self::DB_ADDRESS]);
+        $dto->setPubkey($array[self::DB_PUBKEY]);
+        $dto->setBalance($array[self::DB_BALANCE]);
+        $dto->setTags($this->input_output_decode($array[self::DB_TAGS]));
+        $dto->setTransactions($this->input_output_decode($array[self::DB_TRANSACTIONS]));
+        $dto->setClusterId($array[self::DB_CLUSTER_ID]);
+        return $dto;
+    }
+
+
+    private function dto_to_array(BitcoinAddressDto $dto)
+    {
+        $array=array();
+
+        $array[self::DB_ADDRESS]=$dto->getAddress();
+        $array[self::DB_PUBKEY]=$dto->getPubkey();
+        $array[self::DB_BALANCE]=$dto->getBalance();
+        $array[self::DB_TAGS]=$this->input_output_encode($dto->getTags());
+        $array[self::DB_TRANSACTIONS]=$this->input_output_encode($dto->getTransactions());
+        $array[self::DB_CLUSTER_ID]=$dto->getClusterId();
+
+        return $array;
+    }
 
     protected function getNodeName()
     {
         return self::NODE_NAME;
     }
 
-
     /**
      * BitcoinAddressModel constructor.
-     * @param null $address  - Bitcoin adresa na zaklade, ktorej sa nacita model
      */
-    public function __construct($address = null)
+    public function __construct()
     {
         parent::__construct();
-        $this->address      = $address;
-        if ($address != null) {
-            $this->init();
+    }
+
+    /**
+     * Při vymazávání DB, pro všechny adresy vynuluje zůstatek a smaže seznam transakcí
+     *
+     * Beze změny ponechá tagy, veřejné klíče, cluster
+     */
+    public function clearAddresses()
+    {
+        $this->setOnAllNodes(array(
+            self::DB_BALANCE => 0,
+            self::DB_TRANSACTIONS => $this->input_output_encode(array())
+        ));
+    }
+
+    /**
+     * Uloží uzel do databáze
+     *
+     * @param BitcoinAddressDto $dto
+     */
+    public function storeNode(BitcoinAddressDto $dto)
+    {
+        $values=$this->dto_to_array($dto);
+        $this->insert($values);
+    }
+
+    /**
+     * Nalezení informací o BTC adrese
+     *
+     * @param $address string - BTC adresa
+     * @return BitcoinAddressDto
+     * @throws TransactionNotFoundException
+     */
+    public function findByAddress($address)
+    {
+        $data=$this->findOne(self::DB_ADDRESS,$address);
+        if (count($data) == 0)
+        {
+            throw new TransactionNotFoundException("Address not found: ".$address);
         }
+        return $this->array_to_dto($data);
     }
 
     /**
-     * Inicializacia modelu.
+     * Ověří existenci záznamu o adrese.
+     * Pokud existuje, pak vrátí DTO dané adressy
+     *
+     * @param $address string - hledaná BTC adresa
+     * @return BitcoinAddressDto|null
+     *      BitcoinAddressDto - V případě že adresa existuje
+     *      null - v případě že adresa neexistuje
      */
-    protected function init()
+    public function addressExists($address)
     {
-        $this->setAddressModel();
-        $this->balanceChanged = false;
-    }
-
-    /**
-     * Metoda pre opatovne nacitanie modelu.
-     */
-    public function reload()
-    {
-        $this->init();
-    }
-
-    /**
-     * Ziskanie adresy
-     * @return string/null
-     */
-    public function getAddress(){
-        return $this->address;
-    }
-
-    /**
-     * Nacitanie modelu pre adresu.
-     */
-    protected function setAddressModel()
-    {
-        $this->addressModel = $this->getNodeByAddress();
-    }
-
-    /**
-     * Ziskanie tagov k adrese.
-     * @return mixed
-     */
-    public function getTags()
-    {
-        return Arrays::get($this->addressModel, 'tags', []);
-    }
-
-    /**
-     * Kontrola na prislusnost do nejakeho zhluku.
-     * @return bool
-     */
-    public function isInCluster()
-    {
-        return isset($this->addressModel['cluster']);
-    }
-
-    /**
-     * Ziskanie poctu transakcii, v ktorých figuru zadaná adresa.
-     * @return int
-     */
-    public function getTransactionsCount()
-    {
-        return $this->collection(CurrencyType::collectionName(CurrencyType::transactionModel(static::$type)))->count([
-           'inputsOutputs.addresses' => $this->getAddress()
-        ]);
-    }
-
-    /**
-     * Zvysenie stavu na "ucte" o zadanu hodnotu.
-     * @param double $value
-     */
-    public function increaseBalanace($value)
-    {
-        $isBalanceSetted = Arrays::has($this->addressModel, 'balance');
-        $operationKey    = $isBalanceSetted ? '$inc' : '$set';
-        $this->collection()->findAndModify($this->getFindByAddressCodnitions(), [
-            $operationKey => [
-                'balance' => (double) $value
-            ]
-        ]);
-        $this->balanceChanged = true;
-    }
-
-    /**
-     * Znizenie stavu na "ucte" o zadanu hodnotu.
-     * @param $value
-     */
-    public function decreaseBalance($value)
-    {
-        $isBalanceSetted = Arrays::has($this->addressModel, 'balance');
-        $operationKey    = $isBalanceSetted ? '$inc' : '$set';
-        $this->collection()->findAndModify($this->getFindByAddressCodnitions(), [
-            $operationKey => [
-                'balance' => (double) (-1 * $value)
-            ]
-        ]);
-        $this->balanceChanged = true;
-    }
-
-    protected function getNodeByAddress()
-    {
-        return $this->find("address",$this->address,1);
-    }
-
-    /**
-     * Ziskanie podmienok pre vyhladavanie v kolekcii podla adresy.
-     * @param null $address
-     * @return array
-     */
-    protected function getFindByAddressCodnitions($address = null)
-    {
-        return [
-            'address' => empty($address) ? $this->getAddress() : null
-        ];
-    }
-
-    /**
-     * Ziskanie modelu pre pracu so zhlukami
-     * @return ClusterModel|null
-     */
-    public function getClusterModel()
-    {
-        $clusterModelName = CurrencyType::clusterModel(static::$type);
-        return $this->isInCluster() ? new $clusterModelName($this->addressModel['cluster']) : null;
-    }
-
-    /**
-     * Vypocet stavu na ucte.
-     * @return double
-     */
-    public function getBalance()
-    {
-        /**
-         * V pripade, ze sa stav na ucte nemenil od posledneho nacitania modelu a je stav na ucte nahrany
-         * tak sa vrati hodnota z modelu.
-         */
-        if( ! $this->balanceChanged && Arrays::has($this->addressModel, 'balance')){
-            return (double) round(Arrays::get($this->addressModel, 'balance'), 8) + 0;
+        $data=$this->findOne(self::DB_ADDRESS,$address);
+        if (count($data) == 0)
+        {
+            return null;
         }
-        /**
-         * V pripade, ze sa stav na ucte menil za chodu tak je potreba spocitat aktualny stav na ucte.
-         */
-        $transactionModelName = CurrencyType::transactionModel(static::$type);
-        $m = new $transactionModelName();
-        $aggregateQuery = [
-            [
-                '$match' => [
-                    'inputsOutputs' => [
-                        '$elemMatch'    => [
-                            'addresses' => $this->getAddress(),
-                            'type'      => BitcoinTransactionModel::INPUTS_OUTPUTS_TYPE_OUTPUT,
-                            'spent'     => False,
-                        ]
-                    ]
-                ]
-            ],
-            [
-                '$project' => [
-                    'inputsOutputs' => true,
-                ]
-            ],
-            [
-                '$unwind' => '$inputsOutputs',
-            ],
-            [
-                '$match'    => [
-                    'inputsOutputs.addresses'   => $this->getAddress(),
-                    'inputsOutputs.spent'       => false,
-                ],
-            ],
-            [
-                '$group'    => [
-                    '_id'       => null,
-                    'balance'   => ['$sum'  => '$inputsOutputs.value']
-                ]
-            ],
-        ];
-        $result = $m->collection()->aggregate($aggregateQuery);
-        return Arr::get($result,'result.0.balance', 0);
+        return $this->array_to_dto($data);
     }
+
+
+    /**
+     * Aktualizace hodnot v bloku
+     * @param BitcoinAddressDto $dto
+     */
+    public function updateNode(BitcoinAddressDto $dto)
+    {
+        $this->update(self::DB_ADDRESS,$dto->getAddress(),
+            $this->dto_to_array($dto));
+    }
+
+    /**
+     * Vrátí tagy, které josu spojeny s danou adresou
+     *
+     * @param BitcoinAddressDto $dto Adresa jejíž tagy vyhledávám
+     * @return array<BitcoinTagDto>
+     */
+    public function getTags(BitcoinAddressDto $dto)
+    {
+
+    }
+
 
     /**
      * Ziskanie zoznamu adres, ktore patria do zhluku.

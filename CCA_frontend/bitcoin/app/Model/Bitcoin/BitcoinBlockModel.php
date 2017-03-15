@@ -150,7 +150,7 @@ class BitcoinBlockModel extends BaseBitcoinModel
      */
     public function getLastBlock()
     {
-        return $this->array_to_dto($this->findFirst(NULL,true));
+        return $this->array_to_dto($this->findFirst(self::DB_HEIGHT,self::DATATYPE_INTEGER,true));
     }
 
     /**

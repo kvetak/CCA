@@ -34,8 +34,14 @@ abstract class AbstractScriptParser
 
     protected $SIGNATURE_HEADER_INDICATOR,
         $INTEGER_INDICATOR,
-        $SCRIPT_SIG_SEPARATOR,
         $OP_FALSE;
+
+    const SIG_HASH_TYPES=array(
+        "01" => "SIGHASH_ALL",
+        "02" => "SIGHASH_NONE",
+        "03" => "SIGHASH_SINGLE",
+        "80" => "SIGHASH_ANYONECANPAY"
+    );
 
     public function __construct()
     {
@@ -59,7 +65,6 @@ abstract class AbstractScriptParser
 
         $this->SIGNATURE_HEADER_INDICATOR=chr(0x30);
         $this->INTEGER_INDICATOR=chr(0x02);
-        $this->SCRIPT_SIG_SEPARATOR=chr(0x01);
         $this->OP_FALSE=chr(0x00);
     }
 

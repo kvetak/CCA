@@ -103,7 +103,7 @@ class TransactionController extends Controller
         }
 
         foreach($transaction->getOutputs() as $output){
-            $address = $output->getOutputAddress();
+            $address = $output->getSerializedAddress();
             $element = [
                 'name'          => $address,
                 'value'         => $output->getValue(),

@@ -4,7 +4,7 @@
 @extends('layout')
 @section('content')
     <div class="page-header">
-        <h1>Address: <small>{{$address->getAddress()}}</small></h1>
+        <h1>Address: <small>{{$addressDto->getAddress()}}</small></h1>
     </div>
 
     <div class="row">
@@ -18,22 +18,22 @@
                         <tbody>
                         <tr>
                             <th>Balance</th>
-                            <td>{{$address->getBalance(False, True)}} {{CurrencyType::currencyUnit($currency)}}</td>
+                            <td>{{$addressDto->getBalance()}} {{CurrencyType::currencyUnit($currency)}}</td>
                         </tr>
                         <tr>
                             <th>Transactions</th>
-                            <td>{{$address->getTransactionsCount()}}</td>
+                            <td>{{$addressDto->getTransactionsCount()}}</td>
                         </tr>
                         <tr>
                             <th>Last transaction:</th>
                             <td>
-                                {{\Carbon\Carbon::createFromTimestamp($transactions->next()['time'])}}
+                                {{\Carbon\Carbon::createFromTimestamp(end($transactions)->getTime())}}
                             </td>
                         </tr>
                         <tr>
                             <th>Tools</th>
                             <td>
-                                <a href="{{route('address_cluster', ['address' => $address->getAddress(), 'currency'=>$currency])}}">Show addresses with same owner</a>
+                                <a href="{{route('address_cluster', ['address' => $addressDto->getAddress(), 'currency'=>$currency])}}">Show addresses with same owner</a>
                             </td>
                         </tr>
                         </tbody>
@@ -47,14 +47,16 @@
                         <h3 class="panel-title">Identity</h3>
                     </div>
                     <div class="panel-body">
-                        @if(count($address->getTags()))
+                        @if(count($addressDto->getTags()))
                             <table class="table">
                                 <thead>
-                                    <th>Tag</th>
-                                    <th>Url</th>
+                                    <tr>
+                                        <th>Tag</th>
+                                        <th>Url</th>
+                                    </tr>
                                 </thead>
                                 <tbody>
-                                @foreach($address->getTags() as $tag)
+                                @foreach($addressDto->getTags() as $tag)
                                     <tr>
                                         <td>{{$tag['tag']}}</td>
                                         <td><a href="{{$tag['url']}}" target="_blank">{{$tag['url']}}</a></td>

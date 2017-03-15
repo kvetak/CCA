@@ -89,10 +89,6 @@ class ScriptSigParser extends AbstractScriptParser
         $parsed_length=1;
         $signature = $this->parse_signature($sig_script,$parsed_length,$length);
         $parsed_length += $length;
-        if ($sig_script[$parsed_length++] != $this->SCRIPT_SIG_SEPARATOR)
-        {
-            throw new ScriptParsingException();
-        }
         $pubkey = substr($sig_script,$parsed_length);
         return new BitcoinScriptInputDto(
             BitcoinScriptInputDto::PAY_TO_HASH_PUBKEY,
@@ -125,11 +121,6 @@ class ScriptSigParser extends AbstractScriptParser
             $signatures[]=$this->parse_signature($sig_script,$parsed_length,$length);
 
             $parsed_length+=$length;
-            // after signature, there should be separator byte
-            if($sig_script[$parsed_length++] != $this->SCRIPT_SIG_SEPARATOR)
-            {
-                throw new ScriptParsingException();
-            }
         }
 
         return new BitcoinScriptInputDto(
@@ -156,10 +147,6 @@ class ScriptSigParser extends AbstractScriptParser
             $signature = $this->parse_signature($sig_script,0,$sig_length);
 
             $parsed_length=$sig_length;
-            if ($sig_length[$parsed_length++] != $this->SCRIPT_SIG_SEPARATOR)
-            {
-                throw new ScriptParsingException();
-            }
             $pubkey_script=substr($sig_script,$parsed_length);
 
             $dto=new BitcoinScriptInputDto(
@@ -183,10 +170,6 @@ class ScriptSigParser extends AbstractScriptParser
                 $signatures[]=$this->parse_signature($sig_script,$parsed_length,$length);
 
                 $parsed_length+=$length;
-                if($sig_script[$parsed_length++] != $this->SCRIPT_SIG_SEPARATOR)
-                {
-                    throw new ScriptParsingException();
-                }
                 $parsed_length++; // skip push to byte of following field
             }
 
@@ -239,9 +222,10 @@ class ScriptSigParser extends AbstractScriptParser
         $s_length=ord($script[$begin+$r_length+5]);
         $s_coord = substr($script,$begin+$r_length+6, $s_length);
 
-        $signature = new ScriptSignatureDto(bin2hex($r_coord) , bin2hex($s_coord));
+        $sig_type=bin2hex(substr($script,$s_length + $r_length + 6,1));
+        $signature = new ScriptSignatureDto(bin2hex($r_coord) , bin2hex($s_coord),$sig_type);
 
-        $sig_length=$s_length + $r_length + 6;
+        $sig_length=$s_length + $r_length + 7;
         return $signature;
     }
 

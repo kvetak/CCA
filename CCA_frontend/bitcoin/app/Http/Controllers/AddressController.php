@@ -30,14 +30,15 @@ class AddressController extends Controller
         view()->composer('transaction.transactionListItem', function($view) use($currency) {
             $view->with('currency', $currency);
         });
-        $addressModelName       = CurrencyType::addressModel($currency);
-        $transactionModelName   = CurrencyType::transactionModel($currency);
-        $address                = new $addressModelName($address);
-        $pagination         = new LengthAwarePaginator([], $address->getTransactionsCount(), $limit);
-        $pagination->setPath(route('address_findone', ['address'=>$address->getAddress(), 'currency' => $currency]));
+        $addressModel       = CurrencyType::addressModel($currency);
+        $transactionModel   = CurrencyType::transactionModel($currency);
+        $addressDto = $addressModel->findByAddress($address);
+        $pagination         = new LengthAwarePaginator([], count($addressDto->getTransactionsCount()), $limit);
+        $pagination->setPath(route('address_findone', ['address'=>$addressDto->getAddress(), 'currency' => $currency]));
         $skip               = ($pagination->currentPage() - 1) * $limit;
-        $transactions       = $transactionModelName::findByAddress($address->getAddress(), $skip, $limit)->sort(['time' => -1]);
-        return view('address/findOne', compact('address','transactions', 'balance', 'pagination', 'currency'));
+        $transactions       = $transactionModel->findByMultipleTxid($addressDto->getTransactions());
+
+        return view('address/findOne', compact('addressDto','transactions', 'balance', 'pagination', 'currency'));
     }
 
     /**

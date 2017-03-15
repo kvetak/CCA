@@ -58,6 +58,27 @@ abstract class BaseNeoModel
     }
 
     /**
+     * Pro všechny uzly daného typu v databázi nastaví dané hodnoty
+     * Určeno pro vyčištění databáze při resetu, kdy se mají smazat jen některé hodnoty uzlů
+     *
+     * @param array $attributes
+     */
+    protected function setOnAllNodes(array $attributes)
+    {
+        $set_array=array();
+        foreach ($attributes as $key => $attribute)
+        {
+            $set_array[]="n.".$key." = '".$attribute."'";
+        }
+
+        $query="MATCH (n:".$this->getEffectiveNodeName().")
+            SET ".implode(" , ",$set_array)
+            . "RETURN n;";
+
+        $this->neoConnection->run($query);
+    }
+
+    /**
      * Vrací uzly z databáze, seřazené od nejnovějšího
      * @param int $limit - Maximální počet uzlů, který bude vrácen
      * @param int $skip - počet uzlů který bude přeskočen od začátku výstupu
@@ -141,16 +162,40 @@ abstract class BaseNeoModel
     }
 
     /**
+     * Vrátí všechny uzly, které mají některou z hodnot, obsaženou v poli
+     *
+     * @param $property_name string - hodnota, podle tkeré se filtruje
+     * @param $array array - hledané hodnoty
+     */
+    protected function findByArray($property_name, array $array, $order_by = null, $descending = false)
+    {
+        $where_arr=array();
+        foreach ($array as $val)
+        {
+            $where_arr[]="n.".$property_name." = \"".$val."\" ";
+        }
+
+        $query="MATCH (n:".$this->getEffectiveNodeName().")
+            WHERE ".implode(" or ", $where_arr)."
+            return n
+            ".$this->order_by_clause($order_by,null,$descending);
+
+        $query_result=$this->neoConnection->run($query);
+        return $this->nodes_to_array($query_result->records());
+    }
+
+    /**
      * Najde první uzel v databázi podle seřazeno daného atributu vzestupně nebo sestupně
      * @param String $order_by - atribut podle kterého se bude řadit, pokud je roven NULL, bude se řadit podle ID uzlu
+     * @param string $datatype - datový typ položky, podle které se má řadit
      * @param bool $descending -  true = bude se řadit sestupně, false = vzestupně
      * @return array - pole atributů uzlu
      */
-    protected function findFirst($order_by = null, $descending = false)
+    protected function findFirst($order_by = null, $datatype = null, $descending = false)
     {
         $query="MATCH (n:".$this->getEffectiveNodeName().") 
             return n "
-            .$this->order_by_clause($order_by,null,$descending)."
+            .$this->order_by_clause($order_by,$datatype,$descending)."
             limit 1";
 
         $query_result=$this->neoConnection->run($query);
@@ -247,6 +292,17 @@ abstract class BaseNeoModel
     private function node_to_array(Record $record)
     {
         return $record->valueByIndex(0)->values();
+    }
+
+
+    private function nodes_to_array(array $records)
+    {
+        $result=array();
+        foreach ($records as $record)
+        {
+            $result[]=$record->valueByIndex(0)->values();;
+        }
+        return $result;
     }
 
 }

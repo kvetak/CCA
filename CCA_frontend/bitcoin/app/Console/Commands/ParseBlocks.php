@@ -6,14 +6,15 @@
 
 namespace App\Console\Commands;
 
+use App\Model\Bitcoin\BitcoinAddressModel;
 use App\Model\Bitcoin\BitcoinBlockModel;
 use App\Model\Bitcoin\BitcoinTransactionModel;
 use App\Model\Bitcoin\BitcoinUtils;
+use App\Model\Bitcoin\Dto\BitcoinAddressDto;
 use App\Model\Bitcoin\Dto\BitcoinBlockDto;
 use App\Model\Bitcoin\Dto\BitcoinTransactionDto;
 use App\Model\Bitcoin\Dto\BitcoinTransactionInputDto;
 use App\Model\Bitcoin\Dto\BitcoinTransactionOutputDto;
-use App\Model\Bitcoin\ScriptParser\Dto\BitcoinScriptRedeemerDto;
 use App\Model\Bitcoin\ScriptParser\ScriptPubkeyParser;
 use App\Model\Bitcoin\ScriptParser\ScriptSigParser;
 use App\Model\Blockchain\Parser\BlockchainParser;
@@ -84,6 +85,11 @@ class ParseBlocks extends Command
     private $bitcoinTransactionModel;
 
     /**
+     * @var BitcoinAddressModel
+     */
+    private $bitcoinAddressModel;
+
+    /**
      * @var ScriptPubkeyParser
      */
     private $scriptPubkeyParser;
@@ -102,6 +108,7 @@ class ParseBlocks extends Command
         $this->positionManager=new PositionManager();
         $this->bitcoinBlockModel=new BitcoinBlockModel();
         $this->bitcoinTransactionModel=new BitcoinTransactionModel();
+        $this->bitcoinAddressModel=new BitcoinAddressModel();
         $this->scriptPubkeyParser=new ScriptPubkeyParser();
         $this->scriptSigParser=new ScriptSigParser($this->scriptPubkeyParser);
 
@@ -200,7 +207,7 @@ class ParseBlocks extends Command
             $txid=$this->transaction_hash($transaction);
             $transactionDto->setTxid($txid);
             $transactionDto->setBlockhash($blockhash);
-            $transactionDto->setBlocktime($blockDto->getTime());
+            $transactionDto->setTime($blockDto->getTime());
 
             $inputs = $transaction->getInputTransactions();
             $outputs = $transaction->getOutputTransactions();
@@ -210,9 +217,15 @@ class ParseBlocks extends Command
             $input_addresses=array();
             $coinbase=false;
 
-           $inputDtos=array();
-           foreach ($inputs as $input)
-           {
+            /**
+             * Kolik peněz získala a pozbyla, která adresa, použitá v této transakci
+             * [adresa] => změna zůstatku
+             */
+            $address_balances=array();
+
+            $inputDtos=array();
+            foreach ($inputs as $input)
+            {
                $inputDto=new BitcoinTransactionInputDto();
                $inputDto->setTxid(bin2hex($input->getHash()));
                $inputDto->setVout($input->getIndex());
@@ -235,11 +248,12 @@ class ParseBlocks extends Command
                    $script_sig=$input->getScriptSig();
                    $inputDto->setScriptSig($script_sig);
 
-                   $input_address=$outputDto->getOutputAddress();
+                   $input_address=$outputDto->getSerializedAddress();
                    if ($input_address != null){
                        $input_addresses[]=$input_address;
-                       $inputDto->setInputAddress($input_address);
+                       $inputDto->setSerializedAddress($input_address);
                    }
+                   $address_balances = $this->add_address_balance($address_balances,BitcoinUtils::get_single_address($outputDto->getRedeemerDto()), -($outputDto->getValue()));
 
                    $inputDto->setParsedScriptSig($this->scriptSigParser->parse($script_sig,$outputDto->getRedeemerDto()));
 
@@ -250,7 +264,7 @@ class ParseBlocks extends Command
            }
 
            $outputDtos=array();
-           $n=0;
+           $n=0; // index výstupu
            foreach ($outputs as $output)
            {
                $outputDto = new BitcoinTransactionOutputDto();
@@ -262,8 +276,10 @@ class ParseBlocks extends Command
 
                $outputDto->setScriptPubkey($script_pubkey);
                $redeemerDto=$this->scriptPubkeyParser->parse($script_pubkey);
-               $outputDto->setOutputAddress(BitcoinUtils::serialize_address($redeemerDto));
+               $outputDto->setSerializedAddress(BitcoinUtils::serialize_address($redeemerDto));
                $outputDto->setRedeemerDto($redeemerDto);
+
+               $address_balances = $this->add_address_balance($address_balances,BitcoinUtils::get_single_address($redeemerDto), $outputDto->getValue());
 
                $sum_of_transaction_outputs += $outputDto->getValue();
                $outputDtos[]=$outputDto;
@@ -286,6 +302,9 @@ class ParseBlocks extends Command
             $transactionDto->setOutputs($outputDtos);
             $transactionDto->setUniqueInputAddresses(count(array_unique($input_addresses)));
 
+            // uložení změn stavů na účtech
+           $this->store_address_balance_changes($address_balances,$txid);
+
             $this->bitcoinTransactionModel->storeNode($transactionDto);
         }
         $bitcoinBlockDto->setSumOfInputs($sum_of_inputs);
@@ -294,6 +313,63 @@ class ParseBlocks extends Command
 
         $this->bitcoinBlockModel->storeNode($bitcoinBlockDto);
     }
+
+    /**
+     * Po zpracování jedné transakce uloží změny stavů na účtech
+     * Také k adrese přidá záznam, že participovala na této transakci
+     *
+     * @param $address_balances array změny na účtech kde index = adresa účtu; hodnota = změna stavu účtu
+     * @param $txid string - txid transakce která se právě zpracovává
+     */
+    private function store_address_balance_changes(array $address_balances, $txid)
+    {
+        // uložení změn stavů na účtech
+        foreach ($address_balances as $address => $balance_change)
+        {
+            $addressDto = $this->bitcoinAddressModel->addressExists($address);
+            if ($addressDto == null)
+            {
+                $addressDto = new BitcoinAddressDto();
+                $addressDto->setAddress($address);
+                $addressDto->setBalance($balance_change);
+                $addressDto->setTransactions(array($txid));
+                $this->bitcoinAddressModel->storeNode($addressDto);
+            }
+            else
+            {
+                $addressDto->addBalance($balance_change);
+                $addressDto->addTransaction($txid);
+                $this->bitcoinAddressModel->updateNode($addressDto);
+            }
+        }
+    }
+
+    /**
+     * Přidá nebo změní záznam o změně stavu účtu v jedné transakci
+     *
+     * @param array $address_balance
+     * @param $address
+     * @param $balance_change
+     * @return array
+     */
+    private function add_address_balance(array $address_balance, $address, $balance_change)
+    {
+        if ($address == null)
+        {
+            return $address_balance;
+        }
+
+        if (isset($address_balance[$address]))
+        {
+            $address_balance[$address] += $balance_change;
+        }
+        else
+        {
+            $address_balance[$address] = $balance_change;
+        }
+        return $address_balance;
+    }
+
 
     /**
      * Vypočítá hash transakce (txid)
@@ -445,5 +521,6 @@ class ParseBlocks extends Command
         $this->positionManager->deletePosition();
         $this->bitcoinBlockModel->deleteAllNodes();
         $this->bitcoinTransactionModel->deleteAllNodes();
+        $this->bitcoinAddressModel->clearAddresses();
     }
 }

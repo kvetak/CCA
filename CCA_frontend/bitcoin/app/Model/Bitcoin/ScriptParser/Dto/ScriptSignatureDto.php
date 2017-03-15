@@ -18,15 +18,18 @@ class ScriptSignatureDto
     private $r;
     private $s;
 
+    private $signature_type;
+
     /**
      * ScriptSignatureDto constructor.
      * @param string $r
      * @param $s
      */
-    public function __construct($r, $s)
+    public function __construct($r, $s, $sig_type)
     {
         $this->r = $r;
         $this->s = $s;
+        $this->signature_type=$sig_type;
     }
 
 
@@ -46,5 +49,11 @@ class ScriptSignatureDto
         return $this->s;
     }
 
-
+    /**
+     * @return mixed
+     */
+    public function getSignatureType()
+    {
+        return $this->signature_type;
+    }
 }

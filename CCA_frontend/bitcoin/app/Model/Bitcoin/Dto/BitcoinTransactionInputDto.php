@@ -43,9 +43,9 @@ class BitcoinTransactionInputDto
 
     /**
      * Ze které se brali BTC na tomto vstupu transakce
-     * @var string
+     * @var string - Serializovaná adresa
      */
-    private $inputAddress;
+    private $serializedAddress;
 
     /**
      * @return int
@@ -130,16 +130,16 @@ class BitcoinTransactionInputDto
     /**
      * @return string
      */
-    public function getInputAddress()
+    public function getSerializedAddress()
     {
-        return $this->inputAddress;
+        return $this->serializedAddress;
     }
 
     /**
-     * @param string $inputAddress
+     * @param string $serializedAddress
      */
-    public function setInputAddress($inputAddress)
+    public function setSerializedAddress($serializedAddress)
     {
-        $this->inputAddress = $inputAddress;
+        $this->serializedAddress = $serializedAddress;
     }
 }

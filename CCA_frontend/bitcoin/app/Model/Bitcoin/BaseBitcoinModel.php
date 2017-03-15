@@ -21,4 +21,24 @@ abstract class BaseBitcoinModel extends BaseCurrencyModel
     {
         return self::type;
     }
+
+    /**
+     * Serializace hodnoty tak, aby se dala uložit v databázi
+     * @param $val mixed Hodnota k zakódování
+     * @return string Serializovaná hodnota
+     */
+    protected function input_output_encode($val)
+    {
+        return base64_encode(serialize($val));
+    }
+
+    /**
+     * Deserializace hodnoty, která byla uložena v databázi
+     * @param $val string - Serializovaná hodnota
+     * @return mixed Deserializovaná hodnota
+     */
+    protected function input_output_decode($val)
+    {
+        return unserialize(base64_decode($val));
+    }
 }

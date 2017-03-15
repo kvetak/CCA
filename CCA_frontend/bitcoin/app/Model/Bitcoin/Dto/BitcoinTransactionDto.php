@@ -26,7 +26,6 @@ class BitcoinTransactionDto
      */
     private $time;
 
-
     /**
      * Indikátor jestli je transakce coinbase
      * @var bool
@@ -44,12 +43,6 @@ class BitcoinTransactionDto
      * @var array
      */
     private $outputs;
-
-    /**
-     * Čas kdy byla transakce přidána do bloku
-     * @var int - unix timestamp
-     */
-    private $blocktime;
 
     /**
      * Součet hodnot všech vstupních transakcí
@@ -153,22 +146,6 @@ class BitcoinTransactionDto
     public function setOutputs($outputs)
     {
         $this->outputs = $outputs;
-    }
-
-    /**
-     * @return int
-     */
-    public function getBlocktime()
-    {
-        return $this->blocktime;
-    }
-
-    /**
-     * @param int $blocktime
-     */
-    public function setBlocktime($blocktime)
-    {
-        $this->blocktime = intval($blocktime);
     }
 
     /**

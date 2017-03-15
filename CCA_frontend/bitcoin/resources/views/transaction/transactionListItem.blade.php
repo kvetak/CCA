@@ -6,7 +6,7 @@
         <div class="row transaction-title">
             <div style="" class="vertical-align">
                 <div class="col-md-2">
-                    {{\Carbon\Carbon::createFromTimestamp($transaction->getBlocktime())}}
+                    {{\Carbon\Carbon::createFromTimestamp($transaction->getTime())}}
                 </div>
                 <div class="col-md-5">
                     <strong><small><a href="{{route('transaction_findone',['txid'=>$transaction->getTxid(), 'currency' => $currency])}}">{{$transaction->getTxid()}}</a></small></strong>

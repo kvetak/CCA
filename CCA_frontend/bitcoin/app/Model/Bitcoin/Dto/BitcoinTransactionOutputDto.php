@@ -64,7 +64,7 @@ class BitcoinTransactionOutputDto
      * Serializovaná výstupní adresa
      * @var string
      */
-    private $outputAddress;
+    private $serializedAddress;
 
     /**
      * @return BitcoinScriptRedeemerDto
@@ -191,16 +191,16 @@ class BitcoinTransactionOutputDto
     /**
      * @return string
      */
-    public function getOutputAddress()
+    public function getSerializedAddress()
     {
-        return $this->outputAddress;
+        return $this->serializedAddress;
     }
 
     /**
-     * @param string $outputAddress
+     * @param string $serializedAddress
      */
-    public function setOutputAddress($outputAddress)
+    public function setSerializedAddress($serializedAddress)
     {
-        $this->outputAddress = $outputAddress;
+        $this->serializedAddress = $serializedAddress;
     }
 }

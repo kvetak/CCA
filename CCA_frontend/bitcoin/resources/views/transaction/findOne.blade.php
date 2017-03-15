@@ -24,7 +24,7 @@
                 </tr>
                 <tr>
                     <td><strong>Time/Blocktime</strong></td>
-                    <td>{{\Carbon\Carbon::createFromTimestamp($transactionDto->getBlocktime())}} / {{\Carbon\Carbon::createFromTimestamp($transactionDto->getBlocktime())}}</td>
+                    <td>{{\Carbon\Carbon::createFromTimestamp($transactionDto->getTime())}} / {{\Carbon\Carbon::createFromTimestamp($transactionDto->getTime())}}</td>
                 </tr>
                 <tr>
                     <td><strong>Confirmations</strong></td>

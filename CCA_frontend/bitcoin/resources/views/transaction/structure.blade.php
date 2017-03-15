@@ -1,9 +1,5 @@
 <?php
-    use Underscore\Types\Arrays;
     use \App\Model\CurrencyType;
-
-//    $inputs = Arrays::filterBy($transaction['inputsOutputs'], 'type', \App\Model\InputsOutputsType::TYPE_INPUT);
-//    $outputs = Arrays::filterBy($transaction['inputsOutputs'], 'type', \App\Model\InputsOutputsType::TYPE_OUTPUT);
 ?>
 <div class="vertical-align">
     <div class="col-md-2">
@@ -20,7 +16,7 @@
             @else
                 @foreach( $transactionDto->getInputs()  as $vin)
                 <?php
-                      $address = $vin->getInputAddress();
+                      $address = $vin->getSerializedAddress();
 //                        $tag        = Arrays::get(Arrays::filterBy($tags, 'address', $address), '0.tags.0.tag', null);
 //                        $tagUrl     = Arrays::get(Arrays::filterBy($tags, 'address', $address), '0.tags.0.url', null);
                 ?>
@@ -49,7 +45,7 @@
             @foreach($transactionDto->getOutputs() as $vout)
             <li>
                 <?php
-                    $address=$vout->getOutputAddress();
+                    $address=$vout->getSerializedAddress();
 //                    $tag        = Arrays::get(Arrays::filterBy($tags, 'address', $address), '0.tags.0.tag', null);
 //                    $tagUrl     = Arrays::get(Arrays::filterBy($tags, 'address', $address), '0.tags.0.url', null);
                 ?>
