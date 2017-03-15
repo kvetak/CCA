@@ -1,15 +1,11 @@
 <?php
 
 namespace App\Http\Controllers;
+use App\Model\CurrencyType;
 use Illuminate\Http\Request;
-use App\Http\Requests;
 use Stringy\Stringy as S;
-use App\Model\Bitcoin\BitcoinBlockModel;
-use App\Model\Bitcoin\BitcoinTransactionModel;
-use Underscore\Types\Arrays;
 
 /**
- *
  * Radič realizujuci vyhladavanie v blockchaine.
  *
  * Class SearchController
@@ -17,14 +13,19 @@ use Underscore\Types\Arrays;
  *
  * @author Tomas Drozda <tomas.drozda@icloud.com>
  */
-class SearchController extends Controller{
+class SearchController extends Controller
+{
     /**
      * Spracovaie poziadavku na vyhladavanie.
      * @param Request $request
      * @return \Illuminate\Http\RedirectResponse|\Illuminate\Routing\Redirector
      */
-    public function search(Request $request)
+    public function search($currency, Request $request)
     {
+        $blockModel = CurrencyType::blockModel($currency);
+        $transactionModel = CurrencyType::transactionModel($currency);
+        $addressModel = CurrencyType::addressModel($currency);
+
         /**
          * Vstupna hodnota.
          */
@@ -38,42 +39,47 @@ class SearchController extends Controller{
         /**
          * V pripade, ze vstup je cislo a existuje block s danou vyskou
          */
-        if($numberInput && BitcoinBlockModel::exists(['height' => $numberInput])){
-            $block = BitcoinBlockModel::findByHeight($numberInput);
+
+        if($numberInput && ($block=$blockModel->existByHeight($numberInput)) != null)
+        {
             return redirect(
                 route('block_findone', [
-                    'hash' => $block['hash']
+                    'currency' => $currency,
+                    'hash' => $block->getHash()
                 ])
             );
         }
         elseif($needleLength == 64) { //V pripade ze vstup ma dlzku ako Bitcoin transakcia alebo hash bloku
             //Ked existuje blok s danym hashom
-            if(BitcoinBlockModel::exists(["hash" => (string)$needle])){
+            if($blockModel->existByHash($needle) != null){
                 return redirect(
                     route('block_findone', [
+                        'currency' => $currency,
                         'hash' => $needle
                     ])
                 );
                 //Ked existuje transakcia s uvedenym hashom
-            }elseif(BitcoinTransactionModel::existsByTxId((string)$needle)){
+            }elseif($transactionModel->existsByTxId($needle) != null){
                 return redirect(
                     route('transaction_findone', [
+                        'currency' => $currency,
                         'txid' => $needle
                     ])
                 );
             }
             //Ked sa pravdepodobne jedna o Bitcoin adresu.
-        }elseif( 26 <= $needleLength && $needleLength <= 35 && Arrays::contains([1, 3, 4], (int)(string)$needle->at(0))){
+        }elseif( 26 <= $needleLength && $needleLength <= 35 && $addressModel->addressExists($needle) != null){
             return redirect(
                 route('address_findone', [
-                    'address' => (string)$needle
+                    'currency' => $currency,
+                    'address' => $needle
                 ])
             );
         }
         /**
          * V jinom pripade se ulozi flash message Not Found. Ta je nasledne vypisana na stranke so zoznamom blokov.
          */
-        \Session::flash('message',['text' => 'Not found!', 'type' => 'info']);
-        return redirect(route('homepage'));
+        \Session::flash('message',['text' => 'Not found "'.$needle.'"', 'type' => 'info']);
+        return redirect('');
     }
 }

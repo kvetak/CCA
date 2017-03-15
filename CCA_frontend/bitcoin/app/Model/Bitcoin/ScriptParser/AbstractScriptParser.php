@@ -108,7 +108,7 @@ abstract class AbstractScriptParser
 
         $binary_addr = $HASH_VER . $checksum;
 
-        return "1".Base58Encoder::bc_base58_encode(Base58Encoder::bc_hexdec($binary_addr)).PHP_EOL;
+        return "1".Base58Encoder::bc_base58_encode(Base58Encoder::bc_hexdec($binary_addr));
     }
 
     /**
@@ -131,6 +131,6 @@ abstract class AbstractScriptParser
          * správně by se před výsledek mělo přidat číslo "3", ale z neznámého důvodu se tam toto číslo přidává
          * již při výpočtu base58_encode
          */
-        return Base58Encoder::bc_base58_encode(Base58Encoder::bc_hexdec($binary_addr)).PHP_EOL;
+        return Base58Encoder::bc_base58_encode(Base58Encoder::bc_hexdec($binary_addr));
     }
 }

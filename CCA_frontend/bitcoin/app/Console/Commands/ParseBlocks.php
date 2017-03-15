@@ -156,7 +156,7 @@ class ParseBlocks extends Command
             $parser->startFrom(new PositionDto($this->name_of_first_file,0));
         }
 
-        $blocks= $parser->parse(200); // TODO: nastavit na hodnotu zadanou na vstupu
+        $blocks= $parser->parse(100); // TODO: nastavit na hodnotu zadanou na vstupu
 
         foreach($blocks as $block)
         {

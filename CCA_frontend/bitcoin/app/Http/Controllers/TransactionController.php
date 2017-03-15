@@ -90,14 +90,7 @@ class TransactionController extends Controller
             'name'      => 'source',
             'children'  => [],
         ];
-        $transaction = $transactionModel->findByTxId($txid, [
-            'inputsOutputs.type'        => true,
-            'inputsOutputs.addresses'   => true,
-            'inputsOutputs.n'           => true,
-            'inputsOutputs.value'       => true,
-            'inputsOutputs.spentTxid'   => true,
-            'inputsOutputs.spent'       => true,
-        ]);
+        $transaction = $transactionModel->findByTxId($txid);
         if(empty($transaction)){
             throw new NotFoundHttpException();
         }

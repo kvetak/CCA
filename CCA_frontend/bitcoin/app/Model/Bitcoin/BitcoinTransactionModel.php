@@ -101,12 +101,16 @@ class BitcoinTransactionModel extends BaseBitcoinModel
     /**
      * Overenie existencie transakcie podla TxId.
      * @param $txId - txId transakcie
-     * @return bool
+     * @return BitcoinTransactionDto|null
      */
     public function existsByTxId($txId)
     {
-       $result = $this->findOne(self::DB_TRANS_TXID,$txId);
-       return count($result) > 0;
+        $data = $this->findOne(self::DB_TRANS_TXID,$txId);
+        if (count($data) == 0)
+        {
+            return null;
+        }
+        return $this->array_to_dto($data);
     }
 
     /**
@@ -115,14 +119,14 @@ class BitcoinTransactionModel extends BaseBitcoinModel
      * @return BitcoinTransactionDto
      * @throws TransactionNotFoundException
      */
-    public function findByTxId($txId, $fields = [])
+    public function findByTxId($txId)
     {
-        $data = $this->findOne(self::DB_TRANS_TXID,$txId);
-        if (count($data) == 0)
+        $transaction= $this->existsByTxId($txId);
+        if ($transaction == null)
         {
             throw new TransactionNotFoundException("Not found transaction with hash (txid) = ".$txId);
         }
-        return $this->array_to_dto($data);
+        return $transaction;
     }
 
     /**

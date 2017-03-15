@@ -161,10 +161,26 @@ class BitcoinBlockModel extends BaseBitcoinModel
      */
     public function findByHash($hash)
     {
+        $block=$this->existByHash($hash);
+        if ($block == null){
+            throw new BlockNotFoundException("Not found block with hash ".$hash);
+        }
+        return $block;
+    }
+
+    /**
+     * Ověří existenci bloku podle hashe
+     * Pokud existuje pak jej vrátí
+     *
+     * @param $hash - hash bloku
+     * @return BitcoinBlockDto|null, null = block nebyl nalezen
+     */
+    public function existByHash($hash)
+    {
         $data=$this->findOne(self::DB_HASH,$hash);
         if (count($data) == 0)
         {
-            throw new BlockNotFoundException("Not found block with hash ".$hash);
+         return null;
         }
         return $this->array_to_dto($data);
     }
@@ -176,10 +192,26 @@ class BitcoinBlockModel extends BaseBitcoinModel
      */
     public function findByHeight($height)
     {
+        $block=$this->existByHeight($height);
+        if ($block == null){
+            throw new BlockNotFoundException("Not found block with height ".$height);
+        }
+        return $block;
+    }
+
+    /**
+     * Ověří existenci bloku podle jeho výšky
+     * Pokud blok existuje, pak jej vrátí
+     *
+     * @param $height
+     * @return BitcoinBlockDto|null
+     */
+    public function existByHeight($height)
+    {
         $data=$this->findOne(self::DB_HEIGHT,$height);
         if (count($data) == 0)
         {
-            throw new BlockNotFoundException("Not found block with hash ".$height);
+            return null;
         }
         return $this->array_to_dto($data);
     }
