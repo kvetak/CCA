@@ -35,7 +35,7 @@ class BitcoinUtils
      *
      * @param BitcoinScriptRedeemerDto $dto
      */
-    public static function get_single_address(BitcoinScriptRedeemerDto $dto)
+    public static function get_billable_address(BitcoinScriptRedeemerDto $dto)
     {
         switch ($dto->getType())
         {

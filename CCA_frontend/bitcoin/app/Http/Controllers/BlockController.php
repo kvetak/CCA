@@ -31,7 +31,7 @@ class BlockController extends Controller
     {
         $displayOnlyHeader      = True;
         $blockModel       = CurrencyType::blockModel($currency);
-        $transactionModelClass  = CurrencyType::transactionModel($currency);
+        $transactionModel  = CurrencyType::transactionModel($currency);
 
         $block= $blockModel->findByHash($hash);
 
@@ -41,7 +41,7 @@ class BlockController extends Controller
         $confirmations              = $lastBlock->getHeight() - $block->getHeight();
         $pagination = new LengthAwarePaginator([], $block->getTransactionsCount(), self::TRANSACTIONS_PER_PAGE);
         $skip = ($pagination->currentPage() - 1) * self::TRANSACTIONS_PER_PAGE;
-        $transactions               = $transactionModelClass->findByBlockHash($hash, self::TRANSACTIONS_PER_PAGE, $skip);
+        $transactions               = $transactionModel->findByBlockHash($hash, self::TRANSACTIONS_PER_PAGE, $skip);
         $pagination->setPath(route('block_findone',['hash'=>$block->getHash(), 'currency' => 'bitcoin']));
 
         view()->composer('transaction.transactionListItem', function($view) use($currency) {

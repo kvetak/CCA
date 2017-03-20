@@ -27,7 +27,11 @@
                         <tr>
                             <th>Last transaction:</th>
                             <td>
-                                {{\Carbon\Carbon::createFromTimestamp(end($transactions)->getTime())}}
+                                @if(count($transactions) > 0)
+                                    {{\Carbon\Carbon::createFromTimestamp(end($transactions)->getTime())}}
+                                @else
+                                    Never
+                                @endif
                             </td>
                         </tr>
                         <tr>

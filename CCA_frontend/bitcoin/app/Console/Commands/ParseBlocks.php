@@ -8,6 +8,7 @@ namespace App\Console\Commands;
 
 use App\Model\Bitcoin\BitcoinAddressModel;
 use App\Model\Bitcoin\BitcoinBlockModel;
+use App\Model\Bitcoin\BitcoinClusterModel;
 use App\Model\Bitcoin\BitcoinOutOfOrderBlockModel;
 use App\Model\Bitcoin\BitcoinTransactionModel;
 use App\Model\Bitcoin\BitcoinUtils;
@@ -93,6 +94,11 @@ class ParseBlocks extends Command
     private $bitcoinAddressModel;
 
     /**
+     * @var BitcoinClusterModel
+     */
+    private $bitcoinClusterModel;
+
+    /**
      * @var BitcoinOutOfOrderBlockModel
      */
     private $bitcoinOutOfOrderBlockModel;
@@ -114,10 +120,11 @@ class ParseBlocks extends Command
     {
         $this->info("start: ".(string)Carbon::now());
         $this->positionManager=new PositionManager();
-        $this->bitcoinBlockModel=new BitcoinBlockModel();
-        $this->bitcoinTransactionModel=new BitcoinTransactionModel();
-        $this->bitcoinAddressModel=new BitcoinAddressModel();
-        $this->bitcoinOutOfOrderBlockModel= new BitcoinOutOfOrderBlockModel();
+        $this->bitcoinBlockModel=BitcoinBlockModel::getInstance();
+        $this->bitcoinTransactionModel=BitcoinTransactionModel::getInstance();
+        $this->bitcoinAddressModel=BitcoinAddressModel::getInstance();
+        $this->bitcoinOutOfOrderBlockModel= BitcoinOutOfOrderBlockModel::getInstance();
+        $this->bitcoinClusterModel= BitcoinClusterModel::getInstance();
         $this->scriptPubkeyParser=new ScriptPubkeyParser();
         $this->scriptSigParser=new ScriptSigParser($this->scriptPubkeyParser);
 
@@ -171,26 +178,32 @@ class ParseBlocks extends Command
             $parser->startFrom(new PositionDto($this->name_of_first_file,0));
         }
 
-        $blocks= $parser->parse(200); // TODO: nastavit na hodnotu zadanou na vstupu
-
-        $processed_blocks=array();
-        try {
-            foreach ($blocks as $block) {
-                $processed_blocks[] = $this->process_block($block);
-            }
-        }
-        catch (\Exception $e)
+        // TODO vymyslet dávkování, ať se nenačítá ze vstupu 1 hodnota, ale něco většího
+        for ($i = 0 ; $i < 1 ; $i++) // TODO: nastavit na hodnotu zadanou na vstupu
         {
-            // pokud nastala chyba, proveď rollback - smazat všechny uzly, které byly vloženy
-            foreach ($processed_blocks as $blockhash)
-            {
-                $this->bitcoinTransactionModel->deleteByHash($blockhash);
-                $this->bitcoinBlockModel->deleteByHash($blockhash);
-                $this->bitcoinOutOfOrderBlockModel->deleteByBlockhash($blockhash);
+            // načtení bloků ze souborů blockchainu
+            $blocks= $parser->parse(1);
+
+            // zpracování bloku a uložení do db
+            $processed_blocks=array();
+            try {
+                foreach ($blocks as $block) {
+                    $processed_blocks[] = $this->process_block($block);
+                }
             }
-            throw $e;
+            catch (\Exception $e)
+            {
+                // pokud nastala chyba, proveď rollback - smazat všechny uzly, které byly vloženy ale nejsou zaevidovaný v position manageru
+                foreach ($processed_blocks as $blockhash)
+                {
+                    $this->bitcoinTransactionModel->deleteByHash($blockhash);
+                    $this->bitcoinBlockModel->deleteByHash($blockhash);
+                    $this->bitcoinOutOfOrderBlockModel->deleteByBlockhash($blockhash);
+                }
+                throw $e;
+            }
+            $this->positionManager->store($parser->getPosition());
         }
-        $this->positionManager->store($parser->getPosition());
     }
 
     /**
@@ -252,6 +265,7 @@ class ParseBlocks extends Command
             $sum_of_transaction_inputs=0.0;
             $sum_of_transaction_outputs=0.0;
             $input_addresses=array();
+            $input_clusterize_addresses=array();
             $coinbase=false;
 
             /**
@@ -290,8 +304,12 @@ class ParseBlocks extends Command
                        $input_addresses[]=$input_address;
                        $inputDto->setSerializedAddress($input_address);
                    }
-                   $address_balances = $this->add_address_balance($address_balances,BitcoinUtils::get_single_address($outputDto->getRedeemerDto()), -($outputDto->getValue()));
+                   $billable_address = BitcoinUtils::get_billable_address($outputDto->getRedeemerDto());
+                   if ($billable_address != null) {
 
+                       $address_balances = $this->add_address_balance($address_balances, BitcoinUtils::get_billable_address($outputDto->getRedeemerDto()), -($outputDto->getValue()));
+                       $input_clusterize_addresses[]=$billable_address;
+                   }
                    $inputDto->setParsedScriptSig($this->scriptSigParser->parse($script_sig,$outputDto->getRedeemerDto()));
 
                    $this->bitcoinTransactionModel->updateTransactionOutput($inputDto->getTxid(),$inputDto->getVout(),$outputDto);
@@ -316,7 +334,7 @@ class ParseBlocks extends Command
                $outputDto->setSerializedAddress(BitcoinUtils::serialize_address($redeemerDto));
                $outputDto->setRedeemerDto($redeemerDto);
 
-               $address_balances = $this->add_address_balance($address_balances,BitcoinUtils::get_single_address($redeemerDto), $outputDto->getValue());
+               $address_balances = $this->add_address_balance($address_balances,BitcoinUtils::get_billable_address($redeemerDto), $outputDto->getValue());
 
                $sum_of_transaction_outputs += $outputDto->getValue();
                $outputDtos[]=$outputDto;
@@ -340,9 +358,10 @@ class ParseBlocks extends Command
             $transactionDto->setUniqueInputAddresses(count(array_unique($input_addresses)));
 
             // uložení změn stavů na účtech
-            $this->store_address_balance_changes($address_balances,$txid);
-
             $this->bitcoinTransactionModel->storeNode($transactionDto);
+
+            $this->store_address_balance_changes($address_balances,$txid);
+            $this->bitcoinClusterModel->clusterizeAddresses(array_unique($input_clusterize_addresses));
         }
         $bitcoinBlockDto->setSumOfInputs($sum_of_inputs);
         $bitcoinBlockDto->setSumOfOutputs($sum_of_outputs);

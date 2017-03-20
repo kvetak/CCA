@@ -24,7 +24,7 @@ abstract class BaseNeoModel
      */
     private $neoConnection;
 
-    public function __construct()
+    protected function __construct()
     {
         $this->neoConnection=NeoConnection::connect();
     }
@@ -265,6 +265,34 @@ abstract class BaseNeoModel
         $this->neoConnection->run($query);
     }
 
+    protected function maximum($property,$datatype=null)
+    {
+        $query="MATCH (n:".$this->getEffectiveNodeName().") return max(".$this->propertyDatatype($property,$datatype).")";
+        $result=$this->neoConnection->run($query);
+
+        return $result->firstRecord()->values()[0];
+    }
+
+    /**
+     * Přidá k property daného uzlu funkci pro konverzi datových typů
+     *
+     * @param $property string dotazovaná vlastnost
+     * @param $datatype string|null Datový typ, null pokud datový typ není specifikován
+     * @return string část dotazovací klauzule
+     */
+    private function propertyDatatype($property,$datatype)
+    {
+        // pokud je specifikován datový typ property, aplikuj datový typ
+        if ($datatype != null){
+            return $datatype."(n.".$property.")";
+        }
+        // pokud není datový typ použij jen property
+        else
+        {
+            return "n.".$property;
+        }
+    }
+
     /**
      * Vytvoří klauzuli pro řazení výstupu, podle daných parametrů
      * @param $property string Hodnota, podle které se řadí
@@ -281,15 +309,7 @@ abstract class BaseNeoModel
         // řazení podle property
         else
         {
-            // pokud je specifikován datový typ property, aplikuj datový typ
-            if ($datatype != null){
-                $order= $datatype."(n.".$property.")";
-            }
-            // pokud není datový typ použij jen property
-            else
-            {
-                $order = "n.".$property;
-            }
+            $order = $this->propertyDatatype($property,$datatype);
         }
 
         if ($desc)
@@ -304,7 +324,11 @@ abstract class BaseNeoModel
         return $record->valueByIndex(0)->values();
     }
 
-
+    /**
+     * Převede záznamy získané z databáze do reprezentace v poli
+     * @param array $records
+     * @return array
+     */
     private function nodes_to_array(array $records)
     {
         $result=array();

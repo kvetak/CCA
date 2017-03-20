@@ -1,7 +1,8 @@
 <?php
 namespace App\Model\Bitcoin;
-use App\Model\CurrencyType;
-use Underscore\Types\Arrays;
+use App\Model\Bitcoin\Dto\BitcoinAddressDto;
+use App\Model\Bitcoin\Dto\BitcoinClusterDto;
+
 /**
  * Model pre pracu so zhlukami adries.
  *
@@ -18,36 +19,36 @@ class BitcoinClusterModel extends BaseBitcoinModel
      */
     const NODE_NAME="cluster";
 
-    /**
-     * Identifikator zhluku adries.
-     * @var \MongoId
-     */
-    protected $cluster;
-    /**
-     * Obsah dokumentu z kolekcie zhlukov..
-     * @var
-     */
-    protected $clusterModel;
-    /**
-     * Zoznam tagov aries patriacich do zhluku.
-     * @var array
-     */
-    protected $tags         = [];
-    /**
-     * Velkost zhluku adries.
-     * @var int
-     */
-    protected $clusterSize  = 0;
+    const DB_ID="id";
 
-    public function __construct($cluster = null)
+
+
+
+    /**
+     * @var BitcoinAddressModel
+     */
+    private $bitcoinAddressModel;
+
+
+    private static $instance;
+
+    /**
+     * Tovární metoda, vrací instanci třídy
+     *
+     * @return BitcoinClusterModel volané třídy
+     */
+    public static function getInstance()
+    {
+        if (self::$instance == null){
+            self::$instance= new self();
+        }
+        return self::$instance;
+    }
+
+    protected function __construct()
     {
         parent::__construct();
-        $this->cluster = $cluster;
-
-        if ($cluster != null)
-        {
-            $this->setClusterModel();
-        }
+        $this->bitcoinAddressModel=BitcoinAddressModel::getInstance();
     }
 
     protected function getNodeName()
@@ -55,229 +56,246 @@ class BitcoinClusterModel extends BaseBitcoinModel
         return self::NODE_NAME;
     }
 
-
-    protected function setClusterModel()
-    {
-        $this->clusterModel =  $this->find("_id",$this->getCluster(),1);
-    }
-
     /**
-     * Ziskanie identifikatoru zhluku
-     * @return \MongoId
+     * @param array $data_array
+     * @return BitcoinClusterDto
      */
-    public function getCluster()
+    private function array_to_dto(array $data_array)
     {
-        return $this->cluster;
+        $dto = new BitcoinClusterDto();
+        $dto->setId($data_array[self::DB_ID]);
+        return $dto;
     }
 
     /**
-     * Ziskanie poctu adries, ktore patria do zhluku.
-     * @return int
+     * @param BitcoinClusterDto $dto
+     * @return array
      */
-    public function getSize()
+    private function dto_to_array(BitcoinClusterDto $dto)
     {
-        if( ! $this->clusterSize){
-            $this->clusterSize = $this->collection($this->getAddressCollectionName())->count([
-               'cluster'    => $this->getCluster(),
-            ]);
-
-        }
-        return $this->clusterSize;
+        $array=array();
+        $array[self::DB_ID] = $dto->getId();
+        return $array;
     }
 
     /**
-     * Ziskanie zoznamu otatagovanych adries v zhluku.
-     * @return array|\MongoCursor
+     * Získá z databáze cluster
+     * @param $id int - Identifikátor clusteru
+     * @return BitcoinClusterDto
+     */
+    public function getCluster($id)
+    {
+        $data=$this->findOne(self::DB_ID,$id);
+        $dto=$this->array_to_dto($data);
+        $dto->setAddresses($this->bitcoinAddressModel->getAddressesInCluster($id));
+        return $dto;
+    }
+
+    /**
+     * Vrátí cluster ve kterém je daná adresa
+     *
+     * @param BitcoinAddressDto $addressDto
+     * @return BitcoinClusterDto Cluster
+     */
+    public function getClusterByAddress(BitcoinAddressDto $addressDto)
+    {
+        return $this->getCluster($addressDto->getClusterId());
+    }
+
+    /**
+     * Získání všech tagů, spojených s adresami v clusteru
      */
     public function getTags()
     {
-        if( ! count($this->tags)){
-            $this->tags = $this->collection($this->getAddressCollectionName())->find(
-                [
-                    'cluster' => $this->getCluster(),
-                    'tags'      => [
-                        '$exists' => true,
-                    ]
-                ]
-            );
-        }
-        return $this->tags;
+
     }
 
     /**
-     * Ziskanie celkovo stavu na adresach vramci zhluku adries.
-     */
-    public function getBalance()
-    {
-        $result = $this->collection($this->getAddressCollectionName())->aggregate([
-            [
-                '$match'    => [
-                    'cluster'    => $this->getCluster(),
-                    'balance'   => ['$gt'   =>  0,]
-                ],
-            ],
-            [
-                '$project' => [
-                    'balance'   => true,
-                    'cluster'   => true,
-                    '_id'       => false,
-                ]
-            ],
-            [
-                '$group'    => [
-                    '_id'       => '$cluster',
-                    'balance'   => ['$sum'  => '$balance',]
-                ]
-            ]
-        ]);
-        //Vratenie vysledku vypoctu
-        return (double) Arrays::get($result, 'result.0.balance', 0.0);
-    }
-
-    /**
-     * Ziskanie adries patriacich do zhluku.
+     * Je daná adresa v nějakém clusteru?
      *
-     * @param $limit
-     * @param int $skip
-     * @return \MongoCursor
-     *
+     * @param BitcoinAddressDto $addressDto
+     * @return bool
      */
-    public function getAddresses($limit, $skip = 0)
+    public function isInCluster(BitcoinAddressDto $addressDto)
     {
-        return $this->collection($this->getAddressCollectionName())->find(
-            [
-                'cluster' => $this->getCluster(),
-            ]
-        )->limit($limit)->skip($skip);
+        return $addressDto->getClusterId() != null;
     }
 
     /**
-     * Vytvorenie noveho zaznamu v kolekcii zhlukov
-     * @return mixed
+     * Získání celkového zůstatku všech adres v clusteru
+     * @return int Celkový zůstatek v clusteru
      */
-    public static function initCluster()
+    public function getBalance(BitcoinClusterDto $dto)
     {
-        $c      = get_called_class();
-        $model  = new $c;
-        $d      = ['_id' => new \MongoId()];
-        $model->collection(self::$collection)->insert($d);
-        return $d['_id'];
-    }
-
-    /**
-     * Spojenie uz existujucich zhlukov do jedneho.
-     * @param array $from   - Pole identifikatorov zhlukov (Mongo - ObjectId), ktore maju byt splnene
-     * @param $to           - identifikator cieloveho zhluku
-     */
-    protected static function mergeClusters($from = [], $to)
-    {
-        $queryConditions = [
-            'cluster' => [
-                '$in' => $from
-            ]
-        ];
-        $clusterModelClassName  = get_called_class();
-        $c                      = new $clusterModelClassName;
-        $addressCollectionName= CurrencyType::collectionName(CurrencyType::addressModel(static::$type));
-        $c->collection($addressCollectionName)->update(
-            $queryConditions,
-            [
-                '$set'  => [
-                    'cluster'   => $to,
-                ]
-            ],
-            [
-                'multi' => true
-            ]
-        );
-        //todo merge records in clusters collection
-        //delete OLD clusters
-        $c->collection()->remove($queryConditions);
-    }
-
-    /**
-     * Vytvorenie zhluku
-     * @param array $addresses - Zoznam adries, ktore maju byt priradene do spolocneho zhluku.
-     */
-    public static function createCluster(array $addresses = [])
-    {
-        $addressModelName = CurrencyType::addressModel(static::$type);
-        /**
-         * Pomocna datova struktura, v kotrej bude ulozena prislusnost adries do uz existujucich zhlukov.
-         */
-        $clusterMap = [
-            'clusters'      => [],
-            'notInCluster'  => []
-        ];
-        /**
-         * Zistenie informacii o prislusnosti jednotlivych adries do zhlukov.
-         */
-        foreach($addresses as $address){
-            $a              = new $addressModelName($address);
-            $clusterModel   = $a->getClusterModel();
-            if(empty($clusterModel)){
-                $clusterMap['notInCluster'][] = $address;
-                continue;
-            }
-            $clusterId = (string)$clusterModel->getCluster();
-            if(isset($clusterMap['clusters'][$clusterId])){
-                $clusterMap['clusters'][$clusterId][]   = $address;
-            }else{
-                $clusterMap['clusters'][$clusterId]     = [$address];
-            }
-        }
-
-        /**
-         * Identifikator pre spolocny zhluk adries.
-         */
-        $clusterId          = null;
-        $foundedClusters    = Arrays::size($clusterMap['clusters']);
-        /**
-         *  V pripade ze bude nutne zlucovat zhluky
-         */
-        if( $foundedClusters > 1){
-            /**
-             * Zoradenie zhlukov podla ich velkosti.
-             */
-            $clustersOrderedBySize = Arrays::sort(Arrays::keys($clusterMap['clusters']), function($value){
-                $c      = get_called_class();
-                $cluster = new $c(new \MongoId($value));
-                return $cluster->getSize();
-            }, 'desc');
-            /**
-             * Novym reprezentantom shluku bude najvacsi, ktory uz existuje.
-             */
-            $clusterId = new \MongoId($clustersOrderedBySize[0]);
-            /**
-             * Ziskanie identifikatorov zhlukov, ktore budu spajane.
-             */
-            $otherClustersIds = Arrays::each(Arrays::rest($clustersOrderedBySize, 1), function($value){
-                return new \MongoId($value);
-            });
-            /**
-             * Zjednotenie shlukov do jedneho.
-             */
-            self::mergeClusters($otherClustersIds, $clusterId);
-        }
-        /**
-         * V pripade ze adresy patria do maximalne jedneho zhluku.
-         */
-        elseif($foundedClusters == 1){
-            $clusterId = new \MongoId(Arrays::get($clusterMap, 'clusters.0'));
-        }
-        else{
-            /**
-             * V inom pripade sa vytvori novy zhluk.
-             */
-            $clusterId = self::initCluster();
-        }
-        /**
-         * Adresy ktore nepatria do aktualne ziadneho zhluku su pridane do zhluku.
-         */
-        foreach($clusterMap['notInCluster'] as $addressNotInCluster)
+        $addresses=$this->bitcoinAddressModel->getAddressesInCluster($dto->getId());
+        $balance=0;
+        foreach ($addresses as $address)
         {
-            //Priradenie adresy do zhluku.
-            (new $addressModelName($addressNotInCluster))->addToCluster($clusterId);
+            $balance+=$address->getBalance();
+        }
+        return $balance;
+    }
+
+    /**
+     * Vloží nový cluster do databáze
+     * @param BitcoinClusterDto $dto
+     */
+    public function insertNode(BitcoinClusterDto $dto)
+    {
+        $array=$this->dto_to_array($dto);
+        $this->insert($array);
+    }
+
+    /**
+     * Vrátí použitelné ID pro nový cluster
+     */
+    public function getNewClusterId()
+    {
+        return $this->maximum(self::DB_ID, self::DATATYPE_INTEGER)+1;
+    }
+
+    /**
+     * Vymaže z databáze záznam o daném clusteru
+     *
+     * @param int $cluster_id ID clusteru, který bude smazán
+     * @param bool $remove_addresses Pokud je nastaven na false, tak u adres v databázi zůstane uložen odkaz na cluster
+     * Pokud je nastaven na true, pak se u adres nastaví ukazatel na cluster na null
+     */
+    private function deleteCluster($cluster_id, $remove_addresses=false)
+    {
+        if ($remove_addresses)
+        {
+            $cluster=$this->getCluster($cluster_id);
+            foreach ($cluster->getAddresses() as $address)
+            {
+                $address->setClusterId(null);
+                $this->bitcoinAddressModel->updateNode($address);
+            }
+        }
+        $this->delete(self::DB_ID,$cluster_id);
+    }
+
+    /**
+     * Spojení více clusterů do jednoho
+     * Smaže všechny zadané clustery a adresy z nich vloží do nového clusteru
+     *
+     * // TODO optimalizace, nemazat všechny staré clustery, ale najít největší a do něj přiřadit ostatní adresy
+     *
+     * @param $clusters array<BitcoinClusterDto> Clustery které se mají spojit
+     * @return BitcoinClusterDto Výsledný cluster
+     */
+    private function mergeClusters(array $clusters)
+    {
+        $addresses=array();
+        foreach ($clusters as $cluster)
+        {
+            $addresses=array_merge($addresses,$cluster->getAddresses());
+            $this->deleteCluster($cluster->getId());
+        }
+        return $this->createCluster($addresses);
+    }
+
+    /**
+     * Vytvoří cluster se zadanými adresami
+     * @param array $addresses
+     * @return BitcoinClusterDto Nově vytvořený cluster
+     */
+    private function createCluster(array $addresses)
+    {
+        $new_id=$this->getNewClusterId();
+        $dto= new BitcoinClusterDto();
+        $dto->setId($new_id);
+
+        $this->insertNode($dto);
+
+        foreach ($addresses as $address)
+        {
+            $address->setClusterId($new_id);
+            $this->bitcoinAddressModel->updateNode($address);
+        }
+        return $dto;
+    }
+
+    /**
+     * Přidá adresy do clusteru
+     * Předpokládá že aktuálně adresy v žádném clustery nejsou
+     *
+     * @param BitcoinClusterDto $clusterDto
+     * @param array $addresses
+     */
+    private function addAddressesToCluster(BitcoinClusterDto $clusterDto, array $addresses)
+    {
+        foreach ($addresses as $address)
+        {
+            $address->setClusterId($clusterDto->getId());
+            $this->bitcoinAddressModel->storeNode($address);
+        }
+    }
+
+    /**
+     * Spojení adres do jednoho clusteru
+     * Pokud jsou adresy aktuálně v nějakých clusterech, tak jsou tyto clustery spojeny
+     * Adresy které v clusteru nebyly jsou do něj přiřazeny
+     *
+     * @param array<string> $addresses - Seznam adres které mají být v jednom clusteru
+     */
+    public function clusterizeAddresses(array $addresses)
+    {
+        // spojovat do clusteru jednu nebo žádnou adresu nemá smysl
+        if (count($addresses) < 2)
+        {
+            return;
+        }
+
+        $clusters=array();
+        $not_in_cluster=array();
+
+        /**
+         * zjištění příslušnosti adres do clusterů
+         **/
+        foreach ($addresses as $address)
+        {
+            $addressDto = $this->bitcoinAddressModel->findByAddress($address);
+            $cluster_id=$addressDto->getClusterId();
+            if ($cluster_id != null)
+            {
+                if (!isset($clusters[$cluster_id]))
+                {
+                    $clusters[$cluster_id] = $this->getCluster($cluster_id);
+                }
+            }
+            else
+            {
+                $not_in_cluster[]=$addressDto;
+            }
+        }
+
+        /**
+         * Spojení adres do jednoho clusteru
+         */
+        $cluster_count=count($clusters);
+        // žádný cluster zatím není, je třeba všechny adresy vložit do nového clusteru
+        if ($cluster_count == 0)
+        {
+            // vlož všechny adresy do novéh clusteru
+            $this->createCluster($not_in_cluster);
+        }
+        // celkem jsou adresy v jednom clusteru, ale některé mohou být i mimo něj, takže je třeba je do clusteru vložit
+        elseif ($cluster_count == 1)
+        {
+            if (count($not_in_cluster) > 0)
+            {
+                $this->addAddressesToCluster($clusters[0],$not_in_cluster);
+            }
+        }
+        // adresy jsou ve více clusterech a navíc mohou být i mimo něj
+        else
+        {
+            $new_cluster=$this->mergeClusters($clusters);
+            if (count($not_in_cluster) > 0)
+            {
+                $this->addAddressesToCluster($new_cluster,$not_in_cluster);
+            }
         }
     }
 }

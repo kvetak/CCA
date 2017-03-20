@@ -50,7 +50,7 @@ class TransactionController extends Controller
     /**
      * Graficka vizualizacia transakcie.
      * @param $txid
-     * @return $this
+     * @return \Illuminate\Contracts\View\Factory|\Illuminate\View\View
      */
     public function visualize($currency, $txid)
     {
@@ -71,10 +71,10 @@ class TransactionController extends Controller
     {
         $transactionModel          = CurrencyType::transactionModel($currency);
         $addressModel              = CurrencyType::addressModel($currency);
-        $transaction                    = $transactionModel->findByTxId($txid);
-        $tags = $addressModel::getTagsByAddresses($transactionModel::getAddressesFromTransaction($transaction['inputsOutputs']));
+        $transactionDto                    = $transactionModel->findByTxId($txid);
+//        $tags = $addressModel::getTagsByAddresses($transactionModel::getAddressesFromTransaction($transaction['inputsOutputs']));
         $displayOnlyHeader = false;
-        return view('transaction/structure',compact('transaction', 'displayOnlyHeader', 'tags', 'currency'));
+        return view('transaction/structure',compact('transactionDto', 'displayOnlyHeader', 'tags', 'currency'));
     }
 
     /**

@@ -36,6 +36,21 @@ class BitcoinTransactionModel extends BaseBitcoinModel
     const   INPUTS_OUTPUTS_TYPE_INPUT = 1,
             INPUTS_OUTPUTS_TYPE_OUTPUT = 2;
 
+
+    private static $instance;
+    /**
+     * Tovární metoda, vrací instanci třídy
+     *
+     * @return BitcoinTransactionModel volané třídy
+     */
+    public static function getInstance()
+    {
+        if (self::$instance == null){
+            self::$instance= new self();
+        }
+        return self::$instance;
+    }
+
     protected function getNodeName()
     {
         return self::NODE_NAME;
@@ -147,6 +162,10 @@ class BitcoinTransactionModel extends BaseBitcoinModel
      */
     public function findByMultipleTxid(array $txId)
     {
+        if (count($txId) == 0)
+        {
+            return array();
+        }
         $array=$this->findByArray(self::DB_TRANS_TXID,$txId,self::DB_TRANS_TIME);
 
         $result=array();

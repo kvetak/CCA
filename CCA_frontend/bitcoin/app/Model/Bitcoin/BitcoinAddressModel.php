@@ -37,6 +37,22 @@ class BitcoinAddressModel extends BaseBitcoinModel
     const WEB_SOURCE_TYPE = 1, //ziskany z web. stranky
         USER_INPUT_TYPE = 2; //uzivatelom zadany
 
+
+    private static $instance;
+
+    /**
+     * Tovární metoda, vrací instanci třídy
+     *
+     * @return BitcoinAddressModel volané třídy
+     */
+    public static function getInstance()
+    {
+        if (self::$instance == null){
+            self::$instance= new self();
+        }
+        return self::$instance;
+    }
+
     private function array_to_dto($array)
     {
         $dto=new BitcoinAddressDto();
@@ -73,7 +89,7 @@ class BitcoinAddressModel extends BaseBitcoinModel
     /**
      * BitcoinAddressModel constructor.
      */
-    public function __construct()
+    protected function __construct()
     {
         parent::__construct();
     }
@@ -176,23 +192,15 @@ class BitcoinAddressModel extends BaseBitcoinModel
      * @param $cluster  - identifikator zhluku
      * @return array Zoznam adries patriacich do zhluku.
      */
-    public static function getAddressesInClusterAsArray($cluster){
-        $c      = get_called_class();
-        $a  = new $c;
-        $r = $a->collection()->aggregate([
-            [
-                '$match'    => [
-                    'cluster'   => $cluster,
-                ]
-            ],
-            [
-                '$project'  => [
-                    'address'   => true,
-                    '_id'       => false,
-                ]
-            ]
-        ]);
-        return Arrays::get($r, 'result', []);
+    public function getAddressesInCluster($cluster_id){
+        $data=$this->find(self::DB_CLUSTER_ID, $cluster_id);
+        $addresses=array();
+
+        foreach ($data as $addr_data)
+        {
+            $addresses[]=$this->array_to_dto($addr_data);
+        }
+        return $addresses;
     }
 
     /**

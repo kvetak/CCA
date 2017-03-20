@@ -41,23 +41,23 @@ abstract class CurrencyType{
     private static function init()
     {
         self::$blockModels = [
-            CurrencyType::BITCOIN   => new BitcoinBlockModel(),
-            CurrencyType::LITECOIN  => new LitecoinBlockModel(),
+            CurrencyType::BITCOIN   => BitcoinBlockModel::getInstance(),
+            CurrencyType::LITECOIN  => LitecoinBlockModel::getInstance(),
         ];
 
         self::$addressModels = [
-            CurrencyType::BITCOIN   => new BitcoinAddressModel(),
-            CurrencyType::LITECOIN  => new LitecoinAddressModel(),
+            CurrencyType::BITCOIN   => BitcoinAddressModel::getInstance(),
+            CurrencyType::LITECOIN  => LitecoinAddressModel::getInstance(),
         ];
 
         self::$transactionModels = [
-            CurrencyType::BITCOIN   =>  new BitcoinTransactionModel(),
-            CurrencyType::LITECOIN  =>  new LitecoinTransactionModel(),
+            CurrencyType::BITCOIN   =>  BitcoinTransactionModel::getInstance(),
+            CurrencyType::LITECOIN  =>  LitecoinTransactionModel::getInstance(),
         ];
 
         self::$clusterModels = [
-            CurrencyType::BITCOIN   => new BitcoinClusterModel(),
-            CurrencyType::LITECOIN  => new LitecoinClusterModel(),
+            CurrencyType::BITCOIN   => BitcoinClusterModel::getInstance(),
+            CurrencyType::LITECOIN  => LitecoinClusterModel::getInstance()
         ];
 
         self::$initiated=true;

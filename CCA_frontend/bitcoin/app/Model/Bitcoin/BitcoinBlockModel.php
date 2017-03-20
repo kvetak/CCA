@@ -34,10 +34,26 @@ class BitcoinBlockModel extends BaseBitcoinModel
         DB_TIME="time",
         DB_TRANSACTION_COUNT="transactions";
 
+
+    private static $instance;
+
+    /**
+     * Tovární metoda, vrací instanci třídy
+     *
+     * @return BitcoinBlockModel volané třídy
+     */
+    public static function getInstance()
+    {
+        if (self::$instance == null){
+            self::$instance= new self();
+        }
+        return self::$instance;
+    }
+
     /**
      * BitcoinBlockModel constructor.
      */
-    public function __construct()
+    protected function __construct()
     {
         parent::__construct();
     }

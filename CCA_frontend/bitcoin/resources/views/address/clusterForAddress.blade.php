@@ -4,7 +4,7 @@
 @extends('layout')
 @section('content')
     <div class="page-header">
-        <h1>Addresses with same owner as: <small>{{$address->getAddress()}}</small></h1>
+        <h1>Addresses with same owner as: <small>{{$addressDto->getAddress()}}</small></h1>
     </div>
     <div class="row">
         <div class="col-md-5">
@@ -19,11 +19,11 @@
                             @if(!empty($cluster))
                                 <tr>
                                     <td>Total balance</td>
-                                    <td>{{$cluster->getBalance()}} {{CurrencyType::currencyUnit($currency)}}</td>
+                                    <td>{{$clusterModel->getBalance($cluster)}} {{CurrencyType::currencyUnit($currency)}}</td>
                                 </tr>
                                 <tr>
                                     <td>Number of addresses in cluster</td>
-                                    <td>{{$cluster->getSize()}}</td>
+                                    <td>{{count($cluster->getAddresses())}}</td>
                                 </tr>
                             @endif
                             </tbody>
@@ -39,13 +39,15 @@
                     <h3 class="panel-title">Known identities in cluster</h3>
                 </div>
                 <div class="panel-body">
-                    @if($cluster->getTags()->count())
+                    @if(count($clusterModel->getTags($cluster)) > 0)
                         <table class="table">
                             <thead>
-                                <th>Address</th>
-                                <th>Balance</th>
-                                <th>Tag</th>
-                                <th>Url</th>
+                                <tr>
+                                    <th>Address</th>
+                                    <th>Balance</th>
+                                    <th>Tag</th>
+                                    <th>Url</th>
+                                </tr>
                             </thead>
                             <tbody>
                             @foreach($cluster->getTags() as $addressTags)
@@ -74,14 +76,16 @@
                 <div>
                     <table class="table table-stripped">
                         <thead>
-                        <th>Address in cluster</th>
-                        <th>Balance</th>
+                            <tr>
+                                <th>Address in cluster</th>
+                                <th>Balance</th>
+                            </tr>
                         </thead>
                         <tbody>
                         @foreach($addresses as $address)
                             <tr>
-                                <th><a href="{{route('address_findone', ['address'=>$address['address'], 'currency' => $currency])}}">{{$address['address']}}</a></th>
-                                <td>{{round($address['balance'], 8) + 0}} {{CurrencyType::currencyUnit($currency)}}</td>
+                                <th><a href="{{route('address_findone', ['address'=>$address->getAddress(), 'currency' => $currency])}}">{{$address->getAddress()}}</a></th>
+                                <td>{{round($address->getBalance(), 8) + 0}} {{CurrencyType::currencyUnit($currency)}}</td>
                             </tr>
                         @endforeach
                         </tbody>
@@ -89,7 +93,7 @@
                 </div>
             </div>
     </div>
-    <div class="row text-center">
+   {{-- <div class="row text-center">
         {{$pagination}}
-    </div>
+    </div>--}}
 @stop

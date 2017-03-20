@@ -2,12 +2,8 @@
 
 namespace App\Http\Controllers;
 
-use App\Model\Bitcoin\BitcoinAddressModel;
-use App\Model\Bitcoin\BitcoinTransactionModel;
 use App\Model\CurrencyType;
-use App\Http\Requests;
 use Illuminate\Pagination\LengthAwarePaginator;
-use Underscore\Types\Arrays;
 
 /**
  * Radič pre prácu s Adresami.
@@ -48,21 +44,27 @@ class AddressController extends Controller
      */
     public function clusterForAddress($currency, $address)
     {
-        $limit = 100;
+//        $limit = 100;
+        $addressModel = CurrencyType::addressModel($currency);
+        $clusterModel = CurrencyType::clusterModel($currency);
 
-        $modelName = CurrencyType::addressModel($currency);
+        $addressDto = $addressModel->findByAddress($address);
 
-        $address = new $modelName($address);
-        if( ! $address->isInCluster()){
-            $flashMessage = 'For address <strong>'.$address->getAddress().'</strong> does not exists other address with same owner!';
+
+        if( ! $clusterModel->isInCluster($addressDto))
+        {
+            $flashMessage = 'For address <strong>'.$addressDto->getAddress().'</strong> does not exists other address with same owner!';
             \Session::flash('message',['type' => 'info', 'text' => $flashMessage]);
-            return redirect(route('address_findone', ['address' => $address->getAddress(), 'currency' => $currency]));
+            return redirect(route('address_findone', ['address' => $addressDto->getAddress(), 'currency' => $currency]));
         }
-        $cluster = $address->getClusterModel();
-        $pagination = new LengthAwarePaginator([], (int)$cluster->getSize(), $limit);
-        $pagination->setPath(route('address_cluster', ['address'=>$address->getAddress(), 'currency' => $currency]));
-        $skip       = ($pagination->currentPage() - 1) * $limit;
-        $addresses  = $cluster->getAddresses($limit, $skip)->sort(['balance' => -1]);
-        return view('address/clusterForAddress', compact('address', 'cluster', 'pagination', 'addresses', 'currency'));
+
+
+        $cluster = $clusterModel->getClusterByAddress($addressDto);
+//        $pagination = new LengthAwarePaginator([], (int)$cluster->getSize(), $limit);
+//        $pagination->setPath(route('address_cluster', ['address'=>$addressDto->getAddress(), 'currency' => $currency]));
+//        $skip       = ($pagination->currentPage() - 1) * $limit;
+//        $addresses  = $cluster->getAddresses($limit, $skip)->sort(['balance' => -1]);
+        $addresses  = $cluster->getAddresses();
+        return view('address/clusterForAddress', compact('addressDto', 'cluster', 'pagination', 'addresses', 'currency','clusterModel'));
     }
 }
