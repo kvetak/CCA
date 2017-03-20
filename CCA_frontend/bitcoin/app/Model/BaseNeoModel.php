@@ -18,6 +18,10 @@ abstract class BaseNeoModel
     const DATATYPE_INTEGER="toInteger",
         DATATYPE_STRING="toString";
 
+    const RELATION_TYPE="type",
+        RELATION_PROPERTIES="properties";
+
+
     /**
      * Klient databáze
      * @var \GraphAware\Neo4j\Client\ClientInterface
@@ -34,7 +38,7 @@ abstract class BaseNeoModel
      * Pro měny se skládá z názvu měny a poté z typu uzlu
      * @return string - název uzlu
      */
-    protected abstract function getEffectiveNodeName();
+    protected abstract function getEffectiveNodeName($node_name=null);
 
     /**
      * Vrátí kolektci všech uzlů daného typu
@@ -251,7 +255,7 @@ abstract class BaseNeoModel
      */
     protected function deleteAll()
     {
-        $this->neoConnection->run("MATCH (n:".$this->getEffectiveNodeName().") delete n");
+        $this->neoConnection->run("MATCH (n:".$this->getEffectiveNodeName().") detach delete n");
     }
 
     /**
@@ -261,7 +265,7 @@ abstract class BaseNeoModel
      */
     protected function delete($propety, $value)
     {
-        $query="MATCH (n:".$this->getEffectiveNodeName().") WHERE n.".$propety." = \"".$value."\" delete n";
+        $query="MATCH (n:".$this->getEffectiveNodeName().") WHERE n.".$propety." = \"".$value."\" detach delete n";
         $this->neoConnection->run($query);
     }
 
@@ -271,6 +275,139 @@ abstract class BaseNeoModel
         $result=$this->neoConnection->run($query);
 
         return $result->firstRecord()->values()[0];
+    }
+
+    /**
+     * Vytvoří vazbu mezi dvěma uzly
+     *
+     * @param array $src_attributes hodnoty atributů, podle kterých se vyhledá zdrojový uzel
+     * @param array $relationship_options vlastnosti vazby
+     * @param string $dest_node_type Typ cílového uzlu
+     * @param array $dest_attributes hodnoty atributů, podle kterých se pozná cílový uzel
+     */
+    protected function makeRelation(array $src_attributes, array $relationship_options, $dest_node_type, array $dest_attributes)
+    {
+        $query="MATCH (n:".$this->getEffectiveNodeName().") ".$this->serializeWhereAttributes("n",$src_attributes)."
+             MATCH (n2:".$this->getEffectiveNodeName($dest_node_type).") ".$this->serializeWhereAttributes("n2",$dest_attributes)."
+             Create (n) -".$this->serializaRelationOption($relationship_options)."-> (n2)";
+
+        $this->neoConnection->run($query);
+    }
+
+    /**
+     * Zruší vazby daného jména na určeném uzlu
+     *
+     * @param array $src_attributes
+     * @param string $relation_name Jméno vazby, která se má zrušit
+     */
+    protected function deleteRelations(array $src_attributes, $relation_name)
+    {
+        $query="MATCH (n:".$this->getEffectiveNodeName().")-[rel:".$relation_name."]->(r)
+            ".$this->serializeWhereAttributes("n",$src_attributes)."
+            DELETE rel";
+
+        $this->neoConnection->run($query);
+    }
+
+    /**
+     * @param array $src_attributes
+     * @param $relation_name
+     * @param string $source_node
+     * @return array
+     */
+    protected function findRelatedNodes(array $src_attributes, $relation_name, $source_node=null)
+    {
+        $query="MATCH (n:".$this->getEffectiveNodeName($source_node).")-[rel:".$relation_name."]->(r)
+            ".$this->serializeWhereAttributes("n",$src_attributes)."
+            return r";
+
+        $result=$this->neoConnection->run($query);
+        return $this->nodes_to_array($result->records());
+    }
+
+    /**
+     * Najde uzly ze kterých vede vazba do zadaného uzlu
+     *
+     * @param array $src_attributes
+     * @param $relation_name
+     * @return array
+     */
+    protected function findRelatedNodesBackward(array $src_attributes, $relation_name)
+    {
+        $query="MATCH (n:".$this->getEffectiveNodeName().")<-[rel:".$relation_name."]-(r)
+            ".$this->serializeWhereAttributes("n",$src_attributes)."
+            return r";
+
+        $result=$this->neoConnection->run($query);
+        return $this->nodes_to_array($result->records());
+    }
+
+    /**
+     * Vytvoří index pro daný typ uzlů a na daný atribut
+     * @param $property
+     */
+    protected function createIndex($property)
+    {
+        $query="CREATE INDEX ON :".$this->getEffectiveNodeName()."($property)";
+        $this->neoConnection->run($query);
+    }
+
+    /**
+     * @param array $relationship_options
+     *  struktura pole (
+     *      RELATION_TYPE => "typ",
+     *      RELATION_PROPERTIES => array(
+     *          "prop1" => "value"
+     *      )
+     * )
+     *
+     * @return string Serializovaná klauzule
+     */
+    private function serializaRelationOption(array $relationship_options)
+    {
+        if (count($relationship_options) == 0)
+        {
+            return "";
+        }
+
+        $query="[";
+        if (isset($relationship_options[self::RELATION_TYPE]))
+        {
+            $query.=":".$relationship_options[self::RELATION_TYPE];
+        }
+
+        if (isset($relationship_options[self::RELATION_PROPERTIES]))
+        {
+            $properties=array();
+            foreach ($relationship_options[self::RELATION_PROPERTIES] as $prop => $value)
+            {
+                $properties[]="$prop:$value";
+            }
+            $query.=" {".implode(",",$properties)."}";
+        }
+        return $query."]";
+    }
+
+    /**
+     * Vytvoří obsah where klauzule podle zadaných atributů
+     *
+     * @param $node_name string Jméno uzlu v klauzuli
+     * @param array $attributes atributy klíč => hodnota kterých má uzel nabývat
+     * @return string
+     */
+    private function serializeWhereAttributes($node_name,array $attributes)
+    {
+        if (count($attributes) == 0)
+        {
+            return "";
+        }
+
+        $where_array=array();
+        foreach ($attributes as $key => $attribute)
+        {
+            $where_array[]="$node_name.$key = '".$attribute."'";
+        }
+        return "WHERE ".implode(" AND ",$where_array);
     }
 
     /**

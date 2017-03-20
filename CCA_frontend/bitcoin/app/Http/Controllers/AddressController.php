@@ -22,19 +22,20 @@ class AddressController extends Controller
      */
     public function findOne($currency, $address)
     {
-        $limit = 50;
+        $limit = 500;
         view()->composer('transaction.transactionListItem', function($view) use($currency) {
             $view->with('currency', $currency);
         });
         $addressModel       = CurrencyType::addressModel($currency);
         $transactionModel   = CurrencyType::transactionModel($currency);
         $addressDto = $addressModel->findByAddress($address);
-        $pagination         = new LengthAwarePaginator([], count($addressDto->getTransactionsCount()), $limit);
+        $transactions       = $addressModel->getTransactions($addressDto);
+        $pagination         = new LengthAwarePaginator([], count($transactions), $limit);
         $pagination->setPath(route('address_findone', ['address'=>$addressDto->getAddress(), 'currency' => $currency]));
         $skip               = ($pagination->currentPage() - 1) * $limit;
-        $transactions       = $transactionModel->findByMultipleTxid($addressDto->getTransactions());
+        $tags               = $addressModel->getTags($addressDto);
 
-        return view('address/findOne', compact('addressDto','transactions', 'balance', 'pagination', 'currency'));
+        return view('address/findOne', compact('addressDto','transactions', 'balance', 'pagination', 'currency','tags'));
     }
 
     /**
@@ -64,7 +65,7 @@ class AddressController extends Controller
 //        $pagination->setPath(route('address_cluster', ['address'=>$addressDto->getAddress(), 'currency' => $currency]));
 //        $skip       = ($pagination->currentPage() - 1) * $limit;
 //        $addresses  = $cluster->getAddresses($limit, $skip)->sort(['balance' => -1]);
-        $addresses  = $cluster->getAddresses();
+        $addresses  = $clusterModel->getAddressInCluster($cluster);
         return view('address/clusterForAddress', compact('addressDto', 'cluster', 'pagination', 'addresses', 'currency','clusterModel'));
     }
 }

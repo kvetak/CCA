@@ -22,7 +22,7 @@ class BitcoinClusterModel extends BaseBitcoinModel
     const DB_ID="id";
 
 
-
+    const DB_REL_CONTAINS="contains";
 
     /**
      * @var BitcoinAddressModel
@@ -87,8 +87,15 @@ class BitcoinClusterModel extends BaseBitcoinModel
     {
         $data=$this->findOne(self::DB_ID,$id);
         $dto=$this->array_to_dto($data);
-        $dto->setAddresses($this->bitcoinAddressModel->getAddressesInCluster($id));
         return $dto;
+    }
+
+    /**
+     * Smaže všechny uzly v databázi
+     */
+    public function deleteAllNodes()
+    {
+        $this->deleteAll();
     }
 
     /**
@@ -99,7 +106,32 @@ class BitcoinClusterModel extends BaseBitcoinModel
      */
     public function getClusterByAddress(BitcoinAddressDto $addressDto)
     {
-        return $this->getCluster($addressDto->getClusterId());
+        $data=$this->bitcoinAddressModel->findCluster($addressDto);
+        if (count($data) == 0)
+        {
+            return null;
+        }
+        $clusterDto = $this->array_to_dto($data[0]);
+        return $clusterDto;
+    }
+
+    /**
+     * Najde všechny adresy v daném clusteru
+     * @param BitcoinClusterDto $clusterDto
+     * @return array
+     */
+    public function getAddressInCluster(BitcoinClusterDto $clusterDto)
+    {
+        $addresses = $this->findRelatedNodes(
+            array(self::DB_ID => $clusterDto->getId()),
+            self::DB_REL_CONTAINS
+        );
+        $addressDtos=array();
+        foreach ($addresses as $address)
+        {
+            $addressDtos[]=$this->bitcoinAddressModel->array_to_dto($address);
+        }
+        return $addressDtos;
     }
 
     /**
@@ -118,7 +150,8 @@ class BitcoinClusterModel extends BaseBitcoinModel
      */
     public function isInCluster(BitcoinAddressDto $addressDto)
     {
-        return $addressDto->getClusterId() != null;
+        $cluster=$this->bitcoinAddressModel->findCluster($addressDto);
+        return count($cluster) > 0;
     }
 
     /**
@@ -127,7 +160,7 @@ class BitcoinClusterModel extends BaseBitcoinModel
      */
     public function getBalance(BitcoinClusterDto $dto)
     {
-        $addresses=$this->bitcoinAddressModel->getAddressesInCluster($dto->getId());
+        $addresses=$this->getAddressInCluster($dto);
         $balance=0;
         foreach ($addresses as $address)
         {
@@ -158,20 +191,9 @@ class BitcoinClusterModel extends BaseBitcoinModel
      * Vymaže z databáze záznam o daném clusteru
      *
      * @param int $cluster_id ID clusteru, který bude smazán
-     * @param bool $remove_addresses Pokud je nastaven na false, tak u adres v databázi zůstane uložen odkaz na cluster
-     * Pokud je nastaven na true, pak se u adres nastaví ukazatel na cluster na null
      */
-    private function deleteCluster($cluster_id, $remove_addresses=false)
+    private function deleteCluster($cluster_id)
     {
-        if ($remove_addresses)
-        {
-            $cluster=$this->getCluster($cluster_id);
-            foreach ($cluster->getAddresses() as $address)
-            {
-                $address->setClusterId(null);
-                $this->bitcoinAddressModel->updateNode($address);
-            }
-        }
         $this->delete(self::DB_ID,$cluster_id);
     }
 
@@ -210,8 +232,12 @@ class BitcoinClusterModel extends BaseBitcoinModel
 
         foreach ($addresses as $address)
         {
-            $address->setClusterId($new_id);
-            $this->bitcoinAddressModel->updateNode($address);
+            $this->makeRelation(
+                array(self::DB_ID => $new_id),
+                array(self::RELATION_TYPE => self::DB_REL_CONTAINS),
+                BitcoinAddressModel::NODE_NAME,
+                array(BitcoinAddressModel::DB_ADDRESS => $address->getAddress())
+            );
         }
         return $dto;
     }
@@ -227,8 +253,12 @@ class BitcoinClusterModel extends BaseBitcoinModel
     {
         foreach ($addresses as $address)
         {
-            $address->setClusterId($clusterDto->getId());
-            $this->bitcoinAddressModel->storeNode($address);
+            $this->makeRelation(
+                array(self::DB_ID => $clusterDto->getId()),
+                array(self::RELATION_TYPE => self::DB_REL_CONTAINS),
+                BitcoinAddressModel::NODE_NAME,
+                array(BitcoinAddressModel::DB_ADDRESS,$address->getAddress())
+            );
         }
     }
 
@@ -256,12 +286,12 @@ class BitcoinClusterModel extends BaseBitcoinModel
         foreach ($addresses as $address)
         {
             $addressDto = $this->bitcoinAddressModel->findByAddress($address);
-            $cluster_id=$addressDto->getClusterId();
-            if ($cluster_id != null)
+            $cluster=$this->getClusterByAddress($addressDto);
+            if ($cluster != null)
             {
-                if (!isset($clusters[$cluster_id]))
+                if (!isset($clusters[$cluster->getId()]))
                 {
-                    $clusters[$cluster_id] = $this->getCluster($cluster_id);
+                    $clusters[$cluster->getId()] = $cluster;
                 }
             }
             else

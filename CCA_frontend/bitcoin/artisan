@@ -30,9 +30,12 @@ $app = require_once __DIR__.'/bootstrap/app.php';
 
 $kernel = $app->make(Illuminate\Contracts\Console\Kernel::class);
 
+$consoleOutput=new Symfony\Component\Console\Output\ConsoleOutput;
+$consoleOutput->setVerbosity(100);
+
 $status = $kernel->handle(
     $input = new Symfony\Component\Console\Input\ArgvInput,
-    new Symfony\Component\Console\Output\ConsoleOutput
+    $consoleOutput
 );
 
 /*

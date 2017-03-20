@@ -18,8 +18,11 @@ abstract class BaseCurrencyModel extends BaseNeoModel
      *
      * @return string
      */
-    protected function getEffectiveNodeName()
+    protected function getEffectiveNodeName($node_name=null)
     {
-        return CurrencyType::currencyUnit($this->getType())."_".$this->getNodeName();
+        if ($node_name == null){
+            return CurrencyType::currencyUnit($this->getType())."_".$this->getNodeName();
+        }
+        return CurrencyType::currencyUnit($this->getType())."_".$node_name;
     }
 }

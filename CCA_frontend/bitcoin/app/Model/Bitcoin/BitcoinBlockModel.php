@@ -3,6 +3,7 @@
 namespace App\Model\Bitcoin;
 use App\Model\BaseNeoModel;
 use App\Model\Bitcoin\Dto\BitcoinBlockDto;
+use App\Model\Blockchain\Parser\BlockDto;
 use App\Model\Exceptions\BlockNotFoundException;
 
 /**
@@ -33,6 +34,9 @@ class BitcoinBlockModel extends BaseBitcoinModel
         DB_SUM_OF_OUTPUT="sum_of_outputs",
         DB_TIME="time",
         DB_TRANSACTION_COUNT="transactions";
+
+    const DB_REL_CONTAINS_TRANSACTION="contains";
+    const DB_REL_NEXT="next";
 
 
     private static $instance;
@@ -112,8 +116,16 @@ class BitcoinBlockModel extends BaseBitcoinModel
     }
 
     /**
+     * Vytvoří v databázi indexy pro hledání bloků
+     */
+    public function createIndexes()
+    {
+        $this->createIndex(self::DB_HASH);
+        $this->createIndex(self::DB_HEIGHT);
+    }
+
+    /**
      * Uloží uzel do databáze
-     *
      * @param BitcoinBlockDto $dto
      */
     public function storeNode(BitcoinBlockDto $dto)
@@ -241,6 +253,38 @@ class BitcoinBlockModel extends BaseBitcoinModel
     }
 
     /**
+     * Vytvoří databázovou vazbu mezi blokem a transakcemi
+     * @param BitcoinBlockDto $blockDto Blok do kterého se vkládají transakce
+     * @param array $transactions Dto transakcí, které se mají vložit do bloku
+     */
+    public function includeTransactions(BitcoinBlockDto $blockDto, array $transactions)
+    {
+        foreach ($transactions as $transaction)
+        {
+            $this->makeRelation(
+                array(self::DB_HASH => $blockDto->getHash()),
+                array(self::RELATION_TYPE => self::DB_REL_CONTAINS_TRANSACTION),
+                BitcoinTransactionModel::NODE_NAME,
+                array(BitcoinTransactionModel::DB_TRANS_TXID => $transaction->getTxid()));
+        }
+    }
+
+    /**
+     * Nastaví vazbu následnosti mezi dvěma bloky v databázi
+     * @param BitcoinBlockDto $dto
+     * @param $follower_hash
+     */
+    public function setFollow(BitcoinBlockDto $dto, $previous_block)
+    {
+        $this->makeRelation(
+            array(self::DB_HASH => $previous_block),
+            array(self::RELATION_TYPE => self::DB_REL_NEXT),
+            self::NODE_NAME,
+            array(self::DB_HASH => $dto->getHash())
+        );
+    }
+
+    /**
      * Kontrola ci su transakcie v bloku overene.
      * @param $blockHeight
      * @param $currentBlockHeight
@@ -249,18 +293,6 @@ class BitcoinBlockModel extends BaseBitcoinModel
     public static function isConfirmed($blockHeight, $currentBlockHeight)
     {
         return ($currentBlockHeight - $blockHeight) >= 6;
-    }
-
-    /**
-     * Vyhladavanie zaznamu v kolekci.
-     * @param $params
-     * @return bool
-     */
-    public static function exists($params)
-    {
-        $c      = get_called_class();
-        $model  = new $c;
-        return ! empty($model->collection()->findOne($params,['_id'=>true]));
     }
 
     /**

@@ -12,7 +12,6 @@ use App\Model\Bitcoin\BitcoinClusterModel;
 use App\Model\Bitcoin\BitcoinOutOfOrderBlockModel;
 use App\Model\Bitcoin\BitcoinTransactionModel;
 use App\Model\Bitcoin\BitcoinUtils;
-use App\Model\Bitcoin\Dto\BitcoinAddressDto;
 use App\Model\Bitcoin\Dto\BitcoinBlockDto;
 use App\Model\Bitcoin\Dto\BitcoinTransactionDto;
 use App\Model\Bitcoin\Dto\BitcoinTransactionInputDto;
@@ -47,6 +46,7 @@ class ParseBlocks extends Command
         {path? : Path to directory, where blockchain is located}
         {--clear : Delete blockchain in database and clear last parsing location}
         {--totalClear : Delete everything in database}
+        {--initDb : Prepare database for this aplication}
         {--first_file=blk00000.dat : Name of first file of blockchain (take effect only when last parsing location is empty)}
         {--number_of_blocks=100 : Number of blocks, that should be parsed in one run}';
 
@@ -65,7 +65,10 @@ class ParseBlocks extends Command
      */
     private $number_of_blocks;
 
-    /**
+    /**_address(address)  ONLINE
+  ON :BTC_block(hash)       ONLINE
+  ON :BTC_block(height)     ONLINE
+  ON :BTC_transacti
      * Název prvního souboru v blockchainu
      * @var string
      */
@@ -137,6 +140,12 @@ class ParseBlocks extends Command
         if ($this->option("totalClear"))
         {
             $this->totalClearDatabase();
+            return;
+        }
+
+        if ($this->option("initDb"))
+        {
+            $this->initDatabase();
             return;
         }
 
@@ -225,6 +234,7 @@ class ParseBlocks extends Command
         $bitcoinBlockDto->setHash($blockhash);
 
         $transactions=$blockDto->getTransactions();
+        $transactionDtos=array();
 
         $sum_of_inputs=0.0;
         $sum_of_outputs=0.0;
@@ -359,6 +369,7 @@ class ParseBlocks extends Command
 
             // uložení změn stavů na účtech
             $this->bitcoinTransactionModel->storeNode($transactionDto);
+            $transactionDtos[]=$transactionDto;
 
             $this->store_address_balance_changes($address_balances,$txid);
             $this->bitcoinClusterModel->clusterizeAddresses(array_unique($input_clusterize_addresses));
@@ -368,6 +379,8 @@ class ParseBlocks extends Command
         $bitcoinBlockDto->setSumOfFees($sum_of_fees);
 
         $this->bitcoinBlockModel->storeNode($bitcoinBlockDto);
+        $this->bitcoinBlockModel->includeTransactions($bitcoinBlockDto,$transactionDtos);
+        $this->bitcoinBlockModel->setFollow($bitcoinBlockDto,bin2hex($blockDto->getHashPrevBlock()));
 
         // pokud je v databázi nezpracovaný blok, který navazuje na ten aktuální, zpracuj jej
         $outOfOrderBlok=$this->bitcoinOutOfOrderBlockModel->exists($blockhash);
@@ -578,7 +591,7 @@ class ParseBlocks extends Command
     }
 
     /**
-     * Smaže úplně všechny údeja z databáze
+     * Smaže úplně všechny údaje z databáze
      */
     private function totalClearDatabase()
     {
@@ -587,5 +600,16 @@ class ParseBlocks extends Command
         $this->bitcoinTransactionModel->deleteAllNodes();
         $this->bitcoinAddressModel->deleteAllNodes();
         $this->bitcoinOutOfOrderBlockModel->deleteAllNodes();
+        $this->bitcoinClusterModel->deleteAllNodes();
+    }
+
+    /**
+     * Připraví databázi na běh CCA
+     */
+    private function initDatabase()
+    {
+        $this->bitcoinBlockModel->createIndexes();
+        $this->bitcoinTransactionModel->createIndexes();
+        $this->bitcoinAddressModel->createIndexes();
     }
 }

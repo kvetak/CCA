@@ -75,15 +75,15 @@ class BitcoinTransactionModel extends BaseBitcoinModel
         return $array;
     }
 
-    private function array_to_dto(array $array)
+    public static function array_to_dto(array $array)
     {
         $dto = new BitcoinTransactionDto();
 
         $dto->setTxid($array[self::DB_TRANS_TXID]);
         $dto->setBlockhash($array[self::DB_TRANS_BLOCKHASH]);
         $dto->setTime($array[self::DB_TRANS_TIME]);
-        $dto->setInputs($this->input_output_decode($array[self::DB_TRANS_INPUTS]));
-        $dto->setOutputs($this->input_output_decode($array[self::DB_TRANS_OUTPUTS]));
+        $dto->setInputs(self::input_output_decode($array[self::DB_TRANS_INPUTS]));
+        $dto->setOutputs(self::input_output_decode($array[self::DB_TRANS_OUTPUTS]));
         $dto->setSumOfInputs($array[self::DB_TRANS_SUM_OF_INPUTS]);
         $dto->setSumOfOutputs($array[self::DB_TRANS_SUM_OF_OUTPUTS]);
         $dto->setSumOfFees($array[self::DB_TRANS_SUM_OF_FEES]);
@@ -93,6 +93,13 @@ class BitcoinTransactionModel extends BaseBitcoinModel
         return $dto;
     }
 
+    /**
+     * Vytvoří v databázi indexy pro hledání transakcí
+     */
+    public function createIndexes()
+    {
+        $this->createIndex(self::DB_TRANS_TXID);
+    }
 
     /**
      * Uloží uzel do databáze
@@ -146,7 +153,7 @@ class BitcoinTransactionModel extends BaseBitcoinModel
      */
     public function findByTxId($txId)
     {
-        $transaction= $this->existsByTxId($txId);
+        $transaction = $this->existsByTxId($txId);
         if ($transaction == null)
         {
             throw new TransactionNotFoundException("Not found transaction with hash (txid) = ".$txId);
@@ -213,35 +220,18 @@ class BitcoinTransactionModel extends BaseBitcoinModel
      * @param int $skip        - pocet prvkov, ktore maju z pociatku vystupu preskocene
      * @return array<BitcoinTransactionDto>
      */
-    public function findByBlockHash($blockHash, $limit = 0, $skip = 0)
+    public function findByBlockHash($blockHash)
     {
-        $data=$this->find(self::DB_TRANS_BLOCKHASH,$blockHash,$limit,$skip);
+        $data=$this->findRelatedNodes(
+            array(BitcoinBlockModel::DB_HASH => $blockHash),
+            BitcoinBlockModel::DB_REL_CONTAINS_TRANSACTION,
+            BitcoinBlockModel::NODE_NAME);
+
         $result=array();
         foreach ($data as $transaction)
         {
             $result[]=$this->array_to_dto($transaction);
         }
-        return $result;
-    }
-
-    /**
-     * Najdenie zoznamu transakcii na
-     * @param $address
-     * @param int $skip
-     * @param int $limit
-     * @return \MongoCursor
-     */
-    public static function findByAddress($address, $skip = 0, $limit = 0){
-        $c      = get_called_class();
-        $model  = new $c;
-        $result = $model->collection()->find($model->getConditionsByAddress($address));
-        if($limit){
-            $result = $result->limit((int)$limit);
-        }
-//        if($skip){
-//            $result = $result->skip((int)$skip);
-//        }
-
         return $result;
     }
 
@@ -333,19 +323,5 @@ class BitcoinTransactionModel extends BaseBitcoinModel
     public static function isConfirmed($inBlock, $currentBlock)
     {
         return ($currentBlock - $inBlock) >= 6;
-    }
-
-    /**
-     * Ziskanie zoznamu adries, ktore sa podielali na realizacii transakcie.
-     * @param $inputOutputs    - pole vstupov a vystupov
-     * @return array
-     */
-    public static function getAddressesFromTransaction($inputOutputs)
-    {
-        $addresses = [];
-        foreach($inputOutputs as $input){
-            $addresses = array_merge($addresses, $input['addresses']);
-        }
-        return array_unique($addresses);
     }
 }

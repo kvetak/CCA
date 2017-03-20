@@ -4,7 +4,6 @@ namespace App\Model\Bitcoin;
 
 use App\Model\Bitcoin\Dto\BitcoinAddressDto;
 use App\Model\Exceptions\TransactionNotFoundException;
-use Underscore\Types\Arrays;
 
 /**
  * Model pre pracu s adresami.
@@ -25,11 +24,10 @@ class BitcoinAddressModel extends BaseBitcoinModel
      * Názvy jednotlivých atributů modelu, tak jak jsou uloženy v databázi
      */
     const DB_ADDRESS="address",
-        DB_PUBKEY="pubkey",
-        DB_BALANCE="balance",
-        DB_TAGS="tags",
-        DB_TRANSACTIONS="transactions",
-        DB_CLUSTER_ID="cluster_id";
+        DB_BALANCE="balance";
+
+    const DB_REL_PARTICIPATE="participate",
+        DB_REL_PROP_BALANCE="balance";
 
     /**
      * Typ akym bol tag nahrany do kolekcie.
@@ -53,16 +51,12 @@ class BitcoinAddressModel extends BaseBitcoinModel
         return self::$instance;
     }
 
-    private function array_to_dto($array)
+    public function array_to_dto($array)
     {
         $dto=new BitcoinAddressDto();
 
         $dto->setAddress($array[self::DB_ADDRESS]);
-        $dto->setPubkey($array[self::DB_PUBKEY]);
         $dto->setBalance($array[self::DB_BALANCE]);
-        $dto->setTags($this->input_output_decode($array[self::DB_TAGS]));
-        $dto->setTransactions($this->input_output_decode($array[self::DB_TRANSACTIONS]));
-        $dto->setClusterId($array[self::DB_CLUSTER_ID]);
         return $dto;
     }
 
@@ -72,11 +66,7 @@ class BitcoinAddressModel extends BaseBitcoinModel
         $array=array();
 
         $array[self::DB_ADDRESS]=$dto->getAddress();
-        $array[self::DB_PUBKEY]=$dto->getPubkey();
         $array[self::DB_BALANCE]=$dto->getBalance();
-        $array[self::DB_TAGS]=$this->input_output_encode($dto->getTags());
-        $array[self::DB_TRANSACTIONS]=$this->input_output_encode($dto->getTransactions());
-        $array[self::DB_CLUSTER_ID]=$dto->getClusterId();
 
         return $array;
     }
@@ -94,6 +84,16 @@ class BitcoinAddressModel extends BaseBitcoinModel
         parent::__construct();
     }
 
+
+    /**
+     * Vytvoří v databázi indexy pro hledání adres
+     */
+    public function createIndexes()
+    {
+        $this->createIndex(self::DB_ADDRESS);
+    }
+
+
     /**
      * Při vymazávání DB, pro všechny adresy vynuluje zůstatek a smaže seznam transakcí
      *
@@ -103,8 +103,8 @@ class BitcoinAddressModel extends BaseBitcoinModel
     {
         $this->setOnAllNodes(array(
             self::DB_BALANCE => 0,
-            self::DB_TRANSACTIONS => $this->input_output_encode(array())
         ));
+        $this->deleteRelations(array(),self::DB_REL_PARTICIPATE);
     }
 
     /**
@@ -175,6 +175,34 @@ class BitcoinAddressModel extends BaseBitcoinModel
             $this->dto_to_array($dto));
     }
 
+    public function findCluster(BitcoinAddressDto $addressDto)
+    {
+        return $this->findRelatedNodesBackward(
+            array(self::DB_ADDRESS => $addressDto->getAddress()),
+                BitcoinClusterModel::DB_REL_CONTAINS
+        );
+    }
+
+    /**
+     * Vrátí transakce kterých se zúčastnila tato adresa
+     *
+     * @param BitcoinAddressDto $addressDto
+     * @return array
+     */
+    public function getTransactions(BitcoinAddressDto $addressDto)
+    {
+        $transactions=$this->findRelatedNodes(
+            array(self::DB_ADDRESS => $addressDto->getAddress()),
+            self::DB_REL_PARTICIPATE
+        );
+        $transactionDtos=array();
+        foreach ($transactions as $transaction)
+        {
+            $transactionDtos[]=BitcoinTransactionModel::array_to_dto($transaction);
+        }
+        return $transactionDtos;
+    }
+
     /**
      * Vrátí tagy, které josu spojeny s danou adresou
      *
@@ -218,15 +246,23 @@ class BitcoinAddressModel extends BaseBitcoinModel
             $addressDto = new BitcoinAddressDto();
             $addressDto->setAddress($address);
             $addressDto->setBalance($balance_change);
-            $addressDto->setTransactions(array($txid));
             $this->storeNode($addressDto);
         }
         else
         {
             $addressDto->addBalance($balance_change);
-            $addressDto->addTransaction($txid);
             $this->updateNode($addressDto);
         }
+        $this->makeRelation(
+            array(self::DB_ADDRESS => $address),
+            array(self::RELATION_TYPE => self::DB_REL_PARTICIPATE,
+                self::RELATION_PROPERTIES => array(
+                        self::DB_REL_PROP_BALANCE => $balance_change
+                    )
+                ),
+            BitcoinTransactionModel::NODE_NAME,
+            array(BitcoinTransactionModel::DB_TRANS_TXID => $txid)
+        );
     }
 
     /**

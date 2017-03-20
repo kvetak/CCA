@@ -22,7 +22,7 @@
                         </tr>
                         <tr>
                             <th>Transactions</th>
-                            <td>{{$addressDto->getTransactionsCount()}}</td>
+                            <td>{{count($transactions)}}</td>
                         </tr>
                         <tr>
                             <th>Last transaction:</th>
@@ -51,7 +51,7 @@
                         <h3 class="panel-title">Identity</h3>
                     </div>
                     <div class="panel-body">
-                        @if(count($addressDto->getTags()))
+                        @if(count($tags))
                             <table class="table">
                                 <thead>
                                     <tr>
