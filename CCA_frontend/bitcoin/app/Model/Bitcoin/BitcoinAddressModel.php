@@ -204,27 +204,29 @@ class BitcoinAddressModel extends BaseBitcoinModel
     }
 
     /**
-     * Priradenie adresy do zhluku adries.
-     * @param \MongoId $clusterId  - identifkator zhluku
+     * Zaeviduje transakci, ve které figurovala daná adresa
+     *
+     * @param $address string - adresa
+     * @param $txid string - identifikátor transakce
+     * @param $balance_change float - změna zústatku na dané adrese
      */
-    public function addToCluster($clusterId)
+    public function addTransactionRecord($address, $txid, $balance_change)
     {
-        $this->collection()->findAndModify(
-            [
-                'address'   => $this->getAddress()
-            ],
-            [
-                '$set' => [
-                    'balance'   => (double)$this->getBalance(),
-                    'cluster'   => $clusterId,
-                    'address'   => $this->getAddress(),
-                ]
-            ],
-            null,
-            [
-                'upsert' => True,
-            ]
-        );
+        $addressDto = $this->addressExists($address);
+        if ($addressDto == null)
+        {
+            $addressDto = new BitcoinAddressDto();
+            $addressDto->setAddress($address);
+            $addressDto->setBalance($balance_change);
+            $addressDto->setTransactions(array($txid));
+            $this->storeNode($addressDto);
+        }
+        else
+        {
+            $addressDto->addBalance($balance_change);
+            $addressDto->addTransaction($txid);
+            $this->updateNode($addressDto);
+        }
     }
 
     /**

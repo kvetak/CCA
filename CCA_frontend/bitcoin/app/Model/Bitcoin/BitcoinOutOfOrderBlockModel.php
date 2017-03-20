@@ -18,6 +18,21 @@ class BitcoinOutOfOrderBlockModel extends BaseBitcoinModel
         DB_PREVIOUS_BLOCKHASH="prev_blockhash",
         DB_BLOCK_DTO="block_dto";
 
+    private static $instance;
+
+    /**
+     * Tovární metoda, vrací instanci třídy
+     *
+     * @return BitcoinOutOfOrderBlockModel volané třídy
+     */
+    public static function getInstance()
+    {
+        if (self::$instance == null){
+            self::$instance= new self();
+        }
+        return self::$instance;
+    }
+
     protected function getNodeName()
     {
         return self::NODE_NAME;

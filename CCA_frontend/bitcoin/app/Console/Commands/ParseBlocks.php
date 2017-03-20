@@ -179,7 +179,7 @@ class ParseBlocks extends Command
         }
 
         // TODO vymyslet dávkování, ať se nenačítá ze vstupu 1 hodnota, ale něco většího
-        for ($i = 0 ; $i < 1 ; $i++) // TODO: nastavit na hodnotu zadanou na vstupu
+        for ($i = 0 ; $i < 500 ; $i++) // TODO: nastavit na hodnotu zadanou na vstupu
         {
             // načtení bloků ze souborů blockchainu
             $blocks= $parser->parse(1);
@@ -391,21 +391,7 @@ class ParseBlocks extends Command
         // uložení změn stavů na účtech
         foreach ($address_balances as $address => $balance_change)
         {
-            $addressDto = $this->bitcoinAddressModel->addressExists($address);
-            if ($addressDto == null)
-            {
-                $addressDto = new BitcoinAddressDto();
-                $addressDto->setAddress($address);
-                $addressDto->setBalance($balance_change);
-                $addressDto->setTransactions(array($txid));
-                $this->bitcoinAddressModel->storeNode($addressDto);
-            }
-            else
-            {
-                $addressDto->addBalance($balance_change);
-                $addressDto->addTransaction($txid);
-                $this->bitcoinAddressModel->updateNode($addressDto);
-            }
+            $this->bitcoinAddressModel->addTransactionRecord($address,$txid,$balance_change);
         }
     }
 
