@@ -39,7 +39,7 @@
                     <h3 class="panel-title">Known identities in cluster</h3>
                 </div>
                 <div class="panel-body">
-                    @if(count($clusterModel->getTags($cluster)) > 0)
+                    @if(count($addressTags))
                         <table class="table">
                             <thead>
                                 <tr>
@@ -50,16 +50,16 @@
                                 </tr>
                             </thead>
                             <tbody>
-                            @foreach($cluster->getTags() as $addressTags)
-                                @foreach($addressTags['tags'] as $tag)
+                                @foreach($addressTags as $addressTag)
+                                    @foreach($addressTag->getTags() as $tag)
                                     <tr>
-                                        <td><a href="{{route('address_findone',['address' => $addressTags['address'], 'currency' => $currency])}}" target="_blank">{{$addressTags['address']}}</a></td>
-                                        <td>{{$addressTags['balance']}} {{CurrencyType::currencyUnit($currency)}}</td>
-                                        <td>{{$tag['tag']}}</td>
-                                        <td><a href="{{$tag['url']}}" target="_blank">{{$tag['url']}}</a></td>
+                                        <td><a href="{{route('address_findone',['address' => $addressTag->getAddress()->getAddress(), 'currency' => $currency])}}" target="_blank">{{$addressTag->getAddress()->getAddress()}}</a></td>
+                                        <td>{{$addressTag->getAddress()->getBalance()}} {{CurrencyType::currencyUnit($currency)}}</td>
+                                        <td>{{$tag->getTag()}}</td>
+                                        <td><a href="{{$tag->getUrl()}}" target="_blank">{{$tag->getUrl()}}</a></td>
                                     </tr>
+                                    @endforeach
                                 @endforeach
-                            @endforeach
                             </tbody>
                         </table>
                     @else

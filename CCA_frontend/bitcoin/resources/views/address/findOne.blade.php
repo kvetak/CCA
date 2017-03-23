@@ -60,10 +60,10 @@
                                     </tr>
                                 </thead>
                                 <tbody>
-                                @foreach($addressDto->getTags() as $tag)
+                                @foreach($tags as $tag)
                                     <tr>
-                                        <td>{{$tag['tag']}}</td>
-                                        <td><a href="{{$tag['url']}}" target="_blank">{{$tag['url']}}</a></td>
+                                        <td>{{$tag->getTag()}}</td>
+                                        <td><a href="{{$tag->getUrl()}}" target="_blank">{{$tag->getUrl()}}</a></td>
                                     </tr>
                                 @endforeach
                                 </tbody>

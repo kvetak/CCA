@@ -10,6 +10,7 @@ use App\Model\Bitcoin\BitcoinAddressModel;
 use App\Model\Bitcoin\BitcoinBlockModel;
 use App\Model\Bitcoin\BitcoinClusterModel;
 use App\Model\Bitcoin\BitcoinOutOfOrderBlockModel;
+use App\Model\Bitcoin\BitcoinTagModel;
 use App\Model\Bitcoin\BitcoinTransactionModel;
 use App\Model\Bitcoin\BitcoinUtils;
 use App\Model\Bitcoin\Dto\BitcoinBlockDto;
@@ -65,10 +66,7 @@ class ParseBlocks extends Command
      */
     private $number_of_blocks;
 
-    /**_address(address)  ONLINE
-  ON :BTC_block(hash)       ONLINE
-  ON :BTC_block(height)     ONLINE
-  ON :BTC_transacti
+    /**
      * Název prvního souboru v blockchainu
      * @var string
      */
@@ -107,6 +105,11 @@ class ParseBlocks extends Command
     private $bitcoinOutOfOrderBlockModel;
 
     /**
+     * @var BitcoinTagModel;
+     */
+    private $bitcoinTagModel;
+
+    /**
      * @var ScriptPubkeyParser
      */
     private $scriptPubkeyParser;
@@ -128,6 +131,7 @@ class ParseBlocks extends Command
         $this->bitcoinAddressModel=BitcoinAddressModel::getInstance();
         $this->bitcoinOutOfOrderBlockModel= BitcoinOutOfOrderBlockModel::getInstance();
         $this->bitcoinClusterModel= BitcoinClusterModel::getInstance();
+        $this->bitcoinTagModel = BitcoinTagModel::getInstance();
         $this->scriptPubkeyParser=new ScriptPubkeyParser();
         $this->scriptSigParser=new ScriptSigParser($this->scriptPubkeyParser);
 
@@ -601,6 +605,7 @@ class ParseBlocks extends Command
         $this->bitcoinAddressModel->deleteAllNodes();
         $this->bitcoinOutOfOrderBlockModel->deleteAllNodes();
         $this->bitcoinClusterModel->deleteAllNodes();
+        $this->bitcoinTagModel->deleteAllNodes();
     }
 
     /**

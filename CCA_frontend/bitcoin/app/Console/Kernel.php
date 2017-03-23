@@ -30,7 +30,8 @@ class Kernel extends ConsoleKernel
          Commands\DownloadTags::class,
          Commands\DownloadBlocks::class,
          Commands\Inspire::class,
-         Commands\ParseBlocks::class
+         Commands\ParseBlocks::class,
+         Commands\AddTag::class
     ];
 
     /**

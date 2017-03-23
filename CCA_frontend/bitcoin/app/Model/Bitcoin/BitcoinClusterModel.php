@@ -1,6 +1,7 @@
 <?php
 namespace App\Model\Bitcoin;
 use App\Model\Bitcoin\Dto\BitcoinAddressDto;
+use App\Model\Bitcoin\Dto\BitcoinAddressTagDto;
 use App\Model\Bitcoin\Dto\BitcoinClusterDto;
 
 /**
@@ -118,9 +119,9 @@ class BitcoinClusterModel extends BaseBitcoinModel
     /**
      * Najde všechny adresy v daném clusteru
      * @param BitcoinClusterDto $clusterDto
-     * @return array
+     * @return array<BitcoinAddressDto> Adresy v clusteru
      */
-    public function getAddressInCluster(BitcoinClusterDto $clusterDto)
+    public function getAddressesInCluster(BitcoinClusterDto $clusterDto)
     {
         $addresses = $this->findRelatedNodes(
             array(self::DB_ID => $clusterDto->getId()),
@@ -136,10 +137,40 @@ class BitcoinClusterModel extends BaseBitcoinModel
 
     /**
      * Získání všech tagů, spojených s adresami v clusteru
+     * @param BitcoinClusterDto $dto
+     * @return array<BitcoinTagDto>
      */
-    public function getTags()
+    public function getTags(BitcoinClusterDto $dto)
     {
+        $tags=$this->findMultipleHopRelation(
+            array(self::DB_ID => $dto->getId()),
+            array(self::DB_REL_CONTAINS, BitcoinAddressModel::DB_REL_HAS_TAG)
+        );
 
+        $tagDtos=array();
+        foreach ($tags as $tag)
+        {
+            $tagDtos[]=$this->array_to_dto($tag);
+        }
+        return $tagDtos;
+    }
+
+    /**
+     * Najde všechny adresy v clusteru a k nim související tagy
+     * @param BitcoinClusterDto $dto
+     * @return array<BitcoinAddressTagDto> Dto obsahující adresy a jejich související tagy
+     */
+    public function getAddressTags(BitcoinClusterDto $dto)
+    {
+        $addresses=$this->getAddressesInCluster($dto);
+
+        $result=array();
+        foreach ($addresses as $address)
+        {
+            $tags=$this->bitcoinAddressModel->getTags($address);
+            $result[]=new BitcoinAddressTagDto($address,$tags);
+        }
+        return $result;
     }
 
     /**
@@ -156,11 +187,12 @@ class BitcoinClusterModel extends BaseBitcoinModel
 
     /**
      * Získání celkového zůstatku všech adres v clusteru
+     * @param BitcoinClusterDto $dto
      * @return int Celkový zůstatek v clusteru
      */
     public function getBalance(BitcoinClusterDto $dto)
     {
-        $addresses=$this->getAddressInCluster($dto);
+        $addresses=$this->getAddressesInCluster($dto);
         $balance=0;
         foreach ($addresses as $address)
         {

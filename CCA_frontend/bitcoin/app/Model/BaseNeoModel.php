@@ -342,6 +342,26 @@ abstract class BaseNeoModel
         return $this->nodes_to_array($result->records());
     }
 
+
+    protected function findMultipleHopRelation(array $src_attributes, array $relation_names, $source_node = null)
+    {
+        $relation_count=0;
+        $relation_query="";
+        foreach ($relation_names as $relation)
+        {
+            $relation_query.="-[:$relation]->(n".$relation_count++.")
+            ";
+        }
+
+        $query="MATCH (n:".$this->getEffectiveNodeName($source_node).")
+            ".$relation_query."
+            ".$this->serializeWhereAttributes("n",$src_attributes)."
+            return n".($relation_count-1);
+
+        $result=$this->neoConnection->run($query);
+        return $this->nodes_to_array($result->records());
+    }
+
     /**
      * Vytvoří index pro daný typ uzlů a na daný atribut
      * @param $property

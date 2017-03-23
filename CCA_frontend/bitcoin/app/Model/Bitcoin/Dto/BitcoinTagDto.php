@@ -24,18 +24,6 @@ class BitcoinTagDto
     private $url;
 
     /**
-     * Zdroj stažení identifikátoru
-     * @var int
-     */
-    private $source;
-
-    /**
-     * Typ zdroje
-     * @var int
-     */
-    private $source_type;
-
-    /**
      * @return int
      */
     public function getId()
@@ -81,37 +69,5 @@ class BitcoinTagDto
     public function setUrl($url)
     {
         $this->url = $url;
-    }
-
-    /**
-     * @return int
-     */
-    public function getSource()
-    {
-        return $this->source;
-    }
-
-    /**
-     * @param int $source
-     */
-    public function setSource($source)
-    {
-        $this->source = $source;
-    }
-
-    /**
-     * @return int
-     */
-    public function getSourceType()
-    {
-        return $this->source_type;
-    }
-
-    /**
-     * @param int $source_type
-     */
-    public function setSourceType($source_type)
-    {
-        $this->source_type = $source_type;
     }
 }

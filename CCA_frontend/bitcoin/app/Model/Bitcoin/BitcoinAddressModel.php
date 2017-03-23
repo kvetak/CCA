@@ -3,6 +3,7 @@
 namespace App\Model\Bitcoin;
 
 use App\Model\Bitcoin\Dto\BitcoinAddressDto;
+use App\Model\Bitcoin\Dto\BitcoinTagDto;
 use App\Model\Exceptions\TransactionNotFoundException;
 
 /**
@@ -27,7 +28,8 @@ class BitcoinAddressModel extends BaseBitcoinModel
         DB_BALANCE="balance";
 
     const DB_REL_PARTICIPATE="participate",
-        DB_REL_PROP_BALANCE="balance";
+        DB_REL_PROP_BALANCE="balance",
+        DB_REL_HAS_TAG="has_tag";
 
     /**
      * Typ akym bol tag nahrany do kolekcie.
@@ -209,26 +211,19 @@ class BitcoinAddressModel extends BaseBitcoinModel
      * @param BitcoinAddressDto $dto Adresa jejíž tagy vyhledávám
      * @return array<BitcoinTagDto>
      */
-    public function getTags(BitcoinAddressDto $dto)
+    public function getTags(BitcoinAddressDto $addressDto)
     {
+        $tagNodes = $this->findRelatedNodes(
+            array(self::DB_ADDRESS => $addressDto->getAddress()),
+            self::DB_REL_HAS_TAG
+        );
 
-    }
-
-
-    /**
-     * Ziskanie zoznamu adres, ktore patria do zhluku.
-     * @param $cluster  - identifikator zhluku
-     * @return array Zoznam adries patriacich do zhluku.
-     */
-    public function getAddressesInCluster($cluster_id){
-        $data=$this->find(self::DB_CLUSTER_ID, $cluster_id);
-        $addresses=array();
-
-        foreach ($data as $addr_data)
+        $tags=array();
+        foreach ($tagNodes as $tagNode)
         {
-            $addresses[]=$this->array_to_dto($addr_data);
+            $tags[]=BitcoinTagModel::array_to_dto($tagNode);
         }
-        return $addresses;
+        return $tags;
     }
 
     /**
@@ -266,91 +261,42 @@ class BitcoinAddressModel extends BaseBitcoinModel
     }
 
     /**
-     * Kontrola ci u adresy je zaznamenany tag.
-     * @param $tag
-     * @param $url
-     * @param $source
-     * @param int $sourceType
-     * @return bool
+     * Zkontorluje jestli se u dané adresy nachází daný tag
+     * @param BitcoinAddressDto $addressDto Adresa u které se hledá tag
+     * @param BitcoinTagDto $tagDto Hledaný tag
+     * @return bool true v případě že u dané adresy již je přiřazen daný tag, jinak false
      */
-    public function hasTag($tag, $url, $source, $sourceType = self::WEB_SOURCE_TYPE)
+    public function hasTag(BitcoinAddressDto $addressDto, BitcoinTagDto $tagDto)
     {
-        $query = [
-            'address'           => $this->getAddress(),
-            'tags.url'          => $url,
-            'tags.tag'          => $tag,
-            'tags.source'       => $source,
-            'tags.sourceType'   => $sourceType,
-        ];
-        $r = $this->collection()->findOne(
-            $query,
-            [
-                '_id'   => true,
-            ]
-        );
-        return ! empty($r);
+        $tags=$this->getTags($addressDto);
+
+        foreach ($tags as $tag)
+        {
+            if ($tag->getId() == $tagDto->getId())
+            {
+                return true;
+            }
+        }
+        return false;
     }
 
     /**
-     * Pridanie tagu ku adrese
-     * @param $tag              - hodnota tagu
-     * @param $url              - URL tagu
-     * @param $source           - zdroj
-     * @param int $sourceType   - typ zdroju
+     * Přidá k adrese tag
+     * Pokud již existuje vazba s tímto tagem, nestane se nic
+     *
+     * @param BitcoinAddressDto $addressDto - Adresa, ke které se má přidat tag
+     * @param BitcoinTagDto $tagDto - Tag, který se má přidat k adrese - je nutné aby obsahoval ID!!
      */
-    public function addTag($tag, $url, $source, $sourceType = self::WEB_SOURCE_TYPE)
+    public function addTag(BitcoinAddressDto $addressDto, BitcoinTagDto $tagDto)
     {
-        /**
-         * V pripade, ze zadany tag u adresy neexistuje tak sa tag prida k adrese.
-         */
-        if(! $this->hasTag($tag, $url, $source, $sourceType)){
-            $this->collection()->findAndModify(
-                [
-                    'address'   => $this->getAddress(),
-                ],
-                [
-                    '$addToSet' => [
-                        'tags'  => [
-                            'tag'           => (string) $tag,
-                            'url'           => (string) $url,
-                            'source'        => (int) $source,
-                            'sourceType'    => (int) $sourceType
-                        ]
-                    ]
-                ],
-                null,
-                [
-                    'upsert'    => true,
-                ]
+        if (!$this->hasTag($addressDto, $tagDto))
+        {
+            $this->makeRelation(
+                array(self::DB_ADDRESS => $addressDto->getAddress()),
+                array(self::RELATION_TYPE => self::DB_REL_HAS_TAG),
+                BitcoinTagModel::NODE_NAME,
+                array(BitcoinTagModel::DB_ID => $tagDto->getId())
             );
         }
-    }
-
-    /**
-     * Ziskanie zoznamu tagov ku zadanym adresam.
-     * @param array $addresses
-     * @return mixed
-     */
-    public static function getTagsByAddresses($addresses = [])
-    {
-        $c  = get_called_class();
-        $m  = new $c;
-        $result = $m->collection()->aggregate([
-            [
-                '$match' => [
-                    'address'    => ['$in' => array_values($addresses)],
-                    'tags.0'     => ['$exists' => true]
-
-                ],
-            ],
-            [
-                '$project'    => [
-                    'address' => true,
-                    'tags'    => true,
-                    '_id'     => false,
-                ],
-            ]
-        ]);
-        return $result['result'];
     }
 }
