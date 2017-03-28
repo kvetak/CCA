@@ -161,4 +161,25 @@ class BitcoinTagModel extends BaseBitcoinModel
 
         return $returnArray;
     }
+
+    /**
+     * Najde všechny adresy s daným tagem
+     *
+     * @param BitcoinTagDto $tagDto
+     * @return array Nalezené adresy
+     */
+    public function findAddressesWithTag(BitcoinTagDto $tagDto)
+    {
+        $addresses=$this->findRelatedNodesBackward(
+            array(self::DB_ID => $tagDto->getId()),
+            BitcoinAddressModel::DB_REL_HAS_TAG
+        );
+
+        $addresDtos=array();
+        foreach ($addresses as $address)
+        {
+            $addresDtos[]=BitcoinAddressModel::array_to_dto($address);
+        }
+        return $addresDtos;
+    }
 }

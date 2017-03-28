@@ -18,7 +18,6 @@ use Underscore\Types\Arrays;
  * @package App\Http\Controllers
  *
  * @author Tomas Drozda <tomas.drozda@icloud.com>
- * TODO: dodělat podporů tagů
  */
 class TransactionController extends Controller
 {
@@ -34,7 +33,6 @@ class TransactionController extends Controller
         $displayOnlyHeader              = False;
         $transactionModel               = CurrencyType::transactionModel($currency);
         $blockModel                     = CurrencyType::blockModel($currency);
-        $addressModel                   = CurrencyType::addressModel($currency);
 
         $transactionDto                 = $transactionModel->findByTxId($txid);
         $lastBlock                      = $blockModel->getLastBlock();
@@ -43,8 +41,7 @@ class TransactionController extends Controller
 
         $transactionConfirmationMessage = $isTransactionConfirmed ? 'Transaction is confirmed!' : 'Transaction is not confirmed!';
         $confirmations                  = $lastBlock->getHeight() - $transactionInBlock->getHeight();
-//        $tags = $addressModel::getTagsByAddresses($transactionModel::getAddressesFromTransaction($transactionDto['inputsOutputs']));
-        return view('transaction/findOne',compact('transactionDto', 'displayOnlyHeader', 'transactionConfirmationMessage', 'confirmations', 'isTransactionConfirmed', 'tags', 'currency'));
+        return view('transaction/findOne',compact('transactionDto', 'displayOnlyHeader', 'transactionConfirmationMessage', 'confirmations', 'isTransactionConfirmed', 'currency'));
     }
 
     /**
@@ -70,9 +67,7 @@ class TransactionController extends Controller
     public function structure($currency, $txid)
     {
         $transactionModel          = CurrencyType::transactionModel($currency);
-        $addressModel              = CurrencyType::addressModel($currency);
         $transactionDto                    = $transactionModel->findByTxId($txid);
-//        $tags = $addressModel::getTagsByAddresses($transactionModel::getAddressesFromTransaction($transaction['inputsOutputs']));
         $displayOnlyHeader = false;
         return view('transaction/structure',compact('transactionDto', 'displayOnlyHeader', 'tags', 'currency'));
     }
@@ -86,6 +81,7 @@ class TransactionController extends Controller
     {
         $transactionModel          = CurrencyType::transactionModel($currency);
         $addressModel              = CurrencyType::addressModel($currency);
+
         $result = [
             'name'      => 'source',
             'children'  => [],
@@ -97,16 +93,23 @@ class TransactionController extends Controller
 
         foreach($transaction->getOutputs() as $output){
             $address = $output->getSerializedAddress();
+            $addressDto=$addressModel->addressExists($address);
+
             $element = [
                 'name'          => $address,
                 'value'         => $output->getValue(),
                 'redeemed_tx'   => $output->isSpent() ? [$output->getSpentTxid()] : [],
             ];
-           /* $tags = $addressModel->getTags();
-            if(count($tags)){
-                $element['tag']     = Arrays::get($tags, '0.tag', null);
-                $element['url_tag'] = Arrays::get($tags, '0.url');
-            }*/
+
+            if ($addressDto != null) {
+                $tags = $addressModel->getTags($addressDto);
+                if (count($tags)) {
+                    $element['tag'] = $tags[0]->getTag();
+                    $element['url_tag'] = $tags[0]->getUrl();
+                    /* $element['tag']     = Arrays::get($tags, '0.tag', null);
+                     $element['url_tag'] = Arrays::get($tags, '0.url');*/
+                }
+            }
             $result['children'][]   = $element;
         }
         $result['value'] = $transaction->getSumOfOutputs();

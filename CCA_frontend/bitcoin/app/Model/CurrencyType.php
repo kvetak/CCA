@@ -4,10 +4,12 @@ namespace App\Model;
 use App\Model\Bitcoin\BitcoinAddressModel;
 use App\Model\Bitcoin\BitcoinBlockModel;
 use App\Model\Bitcoin\BitcoinClusterModel;
+use App\Model\Bitcoin\BitcoinTagModel;
 use App\Model\Bitcoin\BitcoinTransactionModel;
 use App\Model\Litecoin\LitecoinAddressModel;
 use App\Model\Litecoin\LitecoinBlockModel;
 use App\Model\Litecoin\LitecoinClusterModel;
+use App\Model\Litecoin\LitecoinTagModel;
 use App\Model\Litecoin\LitecoinTransactionModel;
 use Underscore\Types\Arrays;
 
@@ -37,6 +39,7 @@ abstract class CurrencyType{
     protected static $addressModels;
     protected static $transactionModels;
     protected static $clusterModels;
+    protected static $tagModels;
 
     private static function init()
     {
@@ -58,6 +61,11 @@ abstract class CurrencyType{
         self::$clusterModels = [
             CurrencyType::BITCOIN   => BitcoinClusterModel::getInstance(),
             CurrencyType::LITECOIN  => LitecoinClusterModel::getInstance()
+        ];
+
+        self::$tagModels = [
+            CurrencyType::BITCOIN   => BitcoinTagModel::getInstance(),
+            CurrencyType::LITECOIN  => LitecoinTagModel::getInstance()
         ];
 
         self::$initiated=true;
@@ -126,6 +134,22 @@ abstract class CurrencyType{
             $currencyType = self::fromStr($currencyType);
         }
         return Arrays::get(self::$clusterModels, $currencyType);
+    }
+
+    /**
+     * @param $currencyType
+     * @return BitcoinTagModel
+     */
+    public static function tagModel($currencyType)
+    {
+        if (!self::$initiated){
+        self::init();
+        }
+
+        if( ! is_int($currencyType)){
+            $currencyType = self::fromStr($currencyType);
+        }
+        return Arrays::get(self::$tagModels, $currencyType);
     }
 
     public static function collectionName($model)

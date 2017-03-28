@@ -53,7 +53,7 @@ class BitcoinAddressModel extends BaseBitcoinModel
         return self::$instance;
     }
 
-    public function array_to_dto($array)
+    public static function array_to_dto($array)
     {
         $dto=new BitcoinAddressDto();
 

@@ -57,6 +57,7 @@
                                     <tr>
                                         <th>Tag</th>
                                         <th>Url</th>
+                                        <th>Tag detail</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -64,6 +65,7 @@
                                     <tr>
                                         <td>{{$tag->getTag()}}</td>
                                         <td><a href="{{$tag->getUrl()}}" target="_blank">{{$tag->getUrl()}}</a></td>
+                                        <td><a href="{{route('tag_findOne', ['tagId' => $tag->getId(), 'currency' => $currency])}}">detail</a></td>
                                     </tr>
                                 @endforeach
                                 </tbody>

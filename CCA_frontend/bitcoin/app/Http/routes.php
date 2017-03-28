@@ -73,4 +73,9 @@ Route::group(['middleware' => ['web'], 'prefix' => '{currency}'], function () {
         'as'    => 'search',
         'uses'  => 'SearchController@search'
     ]);
+
+    Route::get('/tag/{tag}',[
+        'as'    => 'tag_findOne',
+        'uses'  => 'TagController@findOne'
+    ]);
 });

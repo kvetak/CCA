@@ -24,6 +24,7 @@ use Illuminate\Console\Command;
  *  - if you want to add more field to store with tag then:
  *      - go to class  App\Model\Bitcoin\Dto\BitcoinTagDto  And add field that you want to store
  *      - next go to class App\Model\Bitcoin\BitcoinTagModel And modify methods  "array_to_dto" and "dto_to array" to load and store this new values
+ *      - at last go to view file resources/views/tags/findOne.blade.php  and add displaying this new fields
  */
 class AddTag extends Command
 {

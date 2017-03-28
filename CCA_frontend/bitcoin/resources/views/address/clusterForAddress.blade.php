@@ -47,6 +47,7 @@
                                     <th>Balance</th>
                                     <th>Tag</th>
                                     <th>Url</th>
+                                    <th>Tag Detail</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -57,6 +58,7 @@
                                         <td>{{$addressTag->getAddress()->getBalance()}} {{CurrencyType::currencyUnit($currency)}}</td>
                                         <td>{{$tag->getTag()}}</td>
                                         <td><a href="{{$tag->getUrl()}}" target="_blank">{{$tag->getUrl()}}</a></td>
+                                        <td><a href="{{route('tag_findOne', ['tagId' => $tag->getId(), 'currency' => $currency])}}">detail</a></td>
                                     </tr>
                                     @endforeach
                                 @endforeach

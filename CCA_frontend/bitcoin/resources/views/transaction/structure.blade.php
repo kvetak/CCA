@@ -17,21 +17,9 @@
                 @foreach( $transactionDto->getInputs()  as $vin)
                 <?php
                       $address = $vin->getSerializedAddress();
-//                        $tag        = Arrays::get(Arrays::filterBy($tags, 'address', $address), '0.tags.0.tag', null);
-//                        $tagUrl     = Arrays::get(Arrays::filterBy($tags, 'address', $address), '0.tags.0.url', null);
                 ?>
                 <li><a href="{{route('transaction_findone',['txid'=>  $vin->getTxid(), 'currency' => $currency])}}" class="glyphicon glyphicon-arrow-left"/>&nbsp;
-                    @if( ! empty($tag) )
-                        <a href="{{route('address_findone',['address'=> $address, 'currency' => $currency])}}">{{str_limit($address, 15)}}
-                            @if(!empty($tagUrl))
-                                <a href="{{$tagUrl}}" target="_blank"><strong>{{$tag}}</strong></a>
-                            @else
-                                {{$tag}}
-                            @endif
-                        </a>
-                    @else
-                        <a href="{{route('address_findone',['address'=> $address, 'currency' => $currency])}}">{{$address}}</a>
-                    @endif
+                    <a href="{{route('address_findone',['address'=> $address, 'currency' => $currency])}}">{{$address}}</a>
                     <small> ({{$vin->getValue()}} {{CurrencyType::currencyUnit($currency)}})</small></li>
                 @endforeach
             @endif
@@ -46,19 +34,8 @@
             <li>
                 <?php
                     $address=$vout->getSerializedAddress();
-//                    $tag        = Arrays::get(Arrays::filterBy($tags, 'address', $address), '0.tags.0.tag', null);
-//                    $tagUrl     = Arrays::get(Arrays::filterBy($tags, 'address', $address), '0.tags.0.url', null);
                 ?>
-                @if( ! empty($tag))
-                        <a href="{{route('address_findone',['address'=> $address, 'currency' => $currency])}}">{{str_limit($address, 15)}}
-                            @if(!empty($tagUrl))
-                                <a href="{{$tagUrl}}" target="_blank"><strong>{{$tag}}</strong></a>
-                            @else
-                                {{$tag}}
-                            @endif
-                @else
-                        <a href="{{route('address_findone',['address'=> $address, 'currency' => $currency])}}">{{$address}}
-                @endif
+                <a href="{{route('address_findone',['address'=> $address, 'currency' => $currency])}}">{{$address}}
                 </a> <small>({{$vout->getValue()}} {{CurrencyType::currencyUnit($currency)}})</small>
                 @if($vout->isSpent())
                     <a href="{{route('transaction_findone', ['txid' =>$vout->getSpentTxid(), 'currency' => $currency])}}" class="glyphicon glyphicon-arrow-right"></a>

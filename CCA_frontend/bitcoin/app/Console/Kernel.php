@@ -27,9 +27,9 @@ class Kernel extends ConsoleKernel
      * @var array
      */
     protected $commands = [
-         Commands\DownloadTags::class,
-         Commands\DownloadBlocks::class,
-         Commands\Inspire::class,
+//         Commands\DownloadTags::class,
+//         Commands\DownloadBlocks::class,
+//         Commands\Inspire::class,
          Commands\ParseBlocks::class,
          Commands\AddTag::class
     ];
