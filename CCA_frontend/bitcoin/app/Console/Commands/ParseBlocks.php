@@ -119,6 +119,14 @@ class ParseBlocks extends Command
      */
     private $scriptSigParser;
 
+
+    /**
+     * Hash bloku který je právě zpracováván
+     * Používá se v případě chyby při zpracování bloku, aby byla informace o tom který blok a jeho související věci se mají smazat
+     * @var string blockhash
+     */
+    private $processing_block;
+
     /**
      * Execute the console command.
      */
@@ -134,6 +142,7 @@ class ParseBlocks extends Command
         $this->bitcoinTagModel = BitcoinTagModel::getInstance();
         $this->scriptPubkeyParser=new ScriptPubkeyParser();
         $this->scriptSigParser=new ScriptSigParser($this->scriptPubkeyParser);
+        $this->processing_block=null;
 
         if ($this->option("clear"))
         {
@@ -207,6 +216,10 @@ class ParseBlocks extends Command
             catch (\Exception $e)
             {
                 // pokud nastala chyba, proveď rollback - smazat všechny uzly, které byly vloženy ale nejsou zaevidovaný v position manageru
+                $this->bitcoinBlockModel->deleteByHash($this->processing_block);
+                $this->bitcoinTransactionModel->deleteByHash($this->processing_block);
+                $this->bitcoinOutOfOrderBlockModel->deleteByBlockhash($this->processing_block);
+
                 foreach ($processed_blocks as $blockhash)
                 {
                     $this->bitcoinTransactionModel->deleteByHash($blockhash);
@@ -236,6 +249,8 @@ class ParseBlocks extends Command
 
         $blockhash=$this->block_hash($blockDto);
         $bitcoinBlockDto->setHash($blockhash);
+
+        $this->processing_block=$blockhash;
 
         $transactions=$blockDto->getTransactions();
         $transactionDtos=array();
@@ -289,6 +304,7 @@ class ParseBlocks extends Command
             $address_balances=array();
 
             $inputDtos=array();
+            // zpracování vstupů transakce
             foreach ($inputs as $input)
             {
                $inputDto=new BitcoinTransactionInputDto();
@@ -334,6 +350,7 @@ class ParseBlocks extends Command
 
            $outputDtos=array();
            $n=0; // index výstupu
+            // zpracování výstupů transakce
            foreach ($outputs as $output)
            {
                $outputDto = new BitcoinTransactionOutputDto();

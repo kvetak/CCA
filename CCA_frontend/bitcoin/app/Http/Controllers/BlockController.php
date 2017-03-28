@@ -63,7 +63,7 @@ class BlockController extends Controller
         $this->paginator->setPath('block');
         $skip       = ($this->currentPage() - 1) * self::LIMIT_PER_PAGE;
         $blocks     = $blockModel->findAll(self::LIMIT_PER_PAGE, $skip);
-        $pagination = $this->renderPagination(True);
+        $pagination = $this->renderPagination(false);
         return view('block/findAll', compact('blocks', 'pagination', 'total', 'currency'));
     }
 }

@@ -7,6 +7,9 @@
         <h1>{{CurrencyType::currencyTitle($currency)}} blocks</h1>
     </div>
     <div class="clearfix"></div>
+    <div class="row text-center">
+        {{$pagination}}
+    </div>
     <table class="table table-striped">
     <thead>
         <tr>
@@ -31,6 +34,6 @@
     </table>
     <div class="clearfix center-"></div>
     <div class="row text-center">
-            {{$pagination}}
+        {{$pagination}}
     </div>
 @stop

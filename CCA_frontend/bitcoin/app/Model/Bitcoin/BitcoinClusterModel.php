@@ -289,7 +289,7 @@ class BitcoinClusterModel extends BaseBitcoinModel
                 array(self::DB_ID => $clusterDto->getId()),
                 array(self::RELATION_TYPE => self::DB_REL_CONTAINS),
                 BitcoinAddressModel::NODE_NAME,
-                array(BitcoinAddressModel::DB_ADDRESS,$address->getAddress())
+                array(BitcoinAddressModel::DB_ADDRESS => $address->getAddress())
             );
         }
     }
@@ -347,7 +347,7 @@ class BitcoinClusterModel extends BaseBitcoinModel
         {
             if (count($not_in_cluster) > 0)
             {
-                $this->addAddressesToCluster($clusters[0],$not_in_cluster);
+                $this->addAddressesToCluster(array_values($clusters)[0],$not_in_cluster);
             }
         }
         // adresy jsou ve více clusterech a navíc mohou být i mimo něj
