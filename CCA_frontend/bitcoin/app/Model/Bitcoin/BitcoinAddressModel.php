@@ -227,6 +227,24 @@ class BitcoinAddressModel extends BaseBitcoinModel
     }
 
     /**
+     * Vrátí veřejný klíč, který odpovídá dané adrese, pokud je znám
+     * @param BitcoinAddressDto $addressDto
+     */
+    public function getPublicKey(BitcoinAddressDto $addressDto)
+    {
+        $data = $this->findRelatedNodesBackward(
+            array(self::DB_ADDRESS => $addressDto->getAddress()),
+            BitcoinPubkeyModel::REL_DEFINES_ADDRESS
+        );
+
+        if (count($data) == 0){
+            return null;
+        }
+
+        return BitcoinPubkeyModel::array_to_dto($data[0]);
+    }
+
+    /**
      * Zaeviduje transakci, ve které figurovala daná adresa
      *
      * @param $address string - adresa

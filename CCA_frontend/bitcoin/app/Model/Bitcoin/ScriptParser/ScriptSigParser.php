@@ -1,10 +1,4 @@
 <?php
-/**
- * Created by PhpStorm.
- * User: martin
- * Date: 10.3.17
- * Time: 14:29
- */
 
 namespace App\Model\Bitcoin\ScriptParser;
 
@@ -19,7 +13,7 @@ use App\Model\Bitcoin\ScriptParser\Dto\ScriptSignatureDto;
  * Class ScriptSigParser
  * @package App\Model\Bitcoin
  */
-class ScriptSigParser extends AbstractScriptParser
+class ScriptSigParser extends BaseScriptParser
 {
     /**
      * For parsing pay to scriptHash, it's requied script pbukey parser for parsing this script

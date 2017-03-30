@@ -321,6 +321,7 @@ class BitcoinClusterModel extends BaseBitcoinModel
             $cluster=$this->getClusterByAddress($addressDto);
             if ($cluster != null)
             {
+                $cluster->setAddresses($this->getAddressesInCluster($cluster));
                 if (!isset($clusters[$cluster->getId()]))
                 {
                     $clusters[$cluster->getId()] = $cluster;

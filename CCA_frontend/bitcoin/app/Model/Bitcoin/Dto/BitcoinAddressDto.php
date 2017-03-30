@@ -29,6 +29,7 @@ class BitcoinAddressDto
 
     public function __construct()
     {
+        $this->balance=0;
         $this->tags=array();
         $this->transactions=array();
     }

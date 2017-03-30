@@ -1,13 +1,8 @@
 <?php
-/**
- * Created by PhpStorm.
- * User: martin
- * Date: 2.3.17
- * Time: 15:08
- */
 
 namespace App\Model\Bitcoin\ScriptParser;
 
+use App\Model\Bitcoin\BitcoinLib;
 use App\Model\Bitcoin\ScriptParser\Dto\BitcoinScriptRedeemerDto;
 
 /**
@@ -16,7 +11,7 @@ use App\Model\Bitcoin\ScriptParser\Dto\BitcoinScriptRedeemerDto;
  * Class ScriptPubkeyParser
  * @package App\Model\Bitcoin
  */
-class ScriptPubkeyParser extends AbstractScriptParser
+class ScriptPubkeyParser extends BaseScriptParser
 {
     /**
      * Parsuje položku script z výstupu transakce.
@@ -32,7 +27,7 @@ class ScriptPubkeyParser extends AbstractScriptParser
         $first_byte=$scriptPubkey[0];
 
         // pay to multisig
-        if (ord($first_byte) >= ord($this->OP_NUMBER_START) and ord($first_byte) <= ord($this->OP_NUMBER_END))
+        if (ord($first_byte) >= ord($this->OP_PUSH_NUMBER_1) and ord($first_byte) <= ord($this->OP_NUMBER_END))
         {
             return $this->parse_as_multisig($scriptPubkey);
         }
@@ -82,7 +77,7 @@ class ScriptPubkeyParser extends AbstractScriptParser
 
         return new BitcoinScriptRedeemerDto(
             BitcoinScriptRedeemerDto::PAY_TO_PUBKEY,
-            array($this->get_address_from_pubkey($hex_publickey)),
+            array(BitcoinLib::get_address_from_pubkey($hex_publickey)),
             array($hex_publickey)
         );
     }
@@ -112,8 +107,8 @@ class ScriptPubkeyParser extends AbstractScriptParser
 
         return new BitcoinScriptRedeemerDto(
             BitcoinScriptRedeemerDto::PAY_TO_HASH_PUBKEY,
-            array($this->get_address_from_hash($hex_hash)),
-            array($hex_hash)
+            array(BitcoinLib::get_address_from_hash($hex_hash)),
+            array()
         );
 
     }
@@ -141,7 +136,7 @@ class ScriptPubkeyParser extends AbstractScriptParser
 
         $dto=new BitcoinScriptRedeemerDto(
             BitcoinScriptRedeemerDto::PAY_TO_SCRIPT_HASH,
-            array($this->get_address_from_script($script_hash))
+            array(BitcoinLib::get_address_from_script($script_hash))
         );
 
         $dto->setHash($script_hash);
@@ -156,7 +151,7 @@ class ScriptPubkeyParser extends AbstractScriptParser
      */
     private function parse_as_multisig($scriptPubkey)
     {
-        $required_keys=(int)($scriptPubkey[0] - $this->OP_NUMBER_START) + 1;
+        $required_keys=(int)($scriptPubkey[0] - $this->OP_PUSH_NUMBER_1) + 1;
 
         if ($required_keys > self::OP_MAX_NUMERIC_VALUE)
         {
@@ -171,12 +166,12 @@ class ScriptPubkeyParser extends AbstractScriptParser
         // in last iteration, $length contains total number of keys
         $length=ord(substr($scriptPubkey,$read_bytes,1));
         $read_bytes++;
-        while ($length < ord($this->OP_NUMBER_START) || $length > ord($this->OP_NUMBER_END))
+        while ($length < ord($this->OP_PUSH_NUMBER_1) || $length > ord($this->OP_NUMBER_END))
         {
             $pubkey=bin2hex(substr($scriptPubkey,$read_bytes,$length));
 
             $pubkeys[]=$pubkey;
-            $addresses[]=$this->get_address_from_pubkey($pubkey);
+            $addresses[]=BitcoinLib::get_address_from_pubkey($pubkey);
 
             $read_bytes+=$length;
 
@@ -185,7 +180,7 @@ class ScriptPubkeyParser extends AbstractScriptParser
 
             $key_count++;
         }
-        $number_of_keys= ($length - ord($this->OP_NUMBER_START)) + 1;
+        $number_of_keys= ($length - ord($this->OP_PUSH_NUMBER_1)) + 1;
 
         if ($number_of_keys != $key_count)
         {

@@ -88,4 +88,9 @@ Route::group(['middleware' => ['web'], 'prefix' => '{currency}'], function () {
         'as'    => 'tag_findOne',
         'uses'  => 'TagController@findOne'
     ]);
+
+    Route::get('/pubkey/{pubkey}',[
+        'as'    => 'pubkey_findOne',
+        'uses'  => 'PubkeyController@findOne'
+    ]);
 });

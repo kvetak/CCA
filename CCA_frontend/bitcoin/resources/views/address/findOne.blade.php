@@ -35,6 +35,16 @@
                             </td>
                         </tr>
                         <tr>
+                            <th>Public key</th>
+                            <td style="word-break:break-all;">
+                                @if($publicKeyDto == null)
+                                    Unknown
+                                @else
+                                    <a href="{{route('pubkey_findOne', ['currency' => $currency, 'pubkey' => $publicKeyDto->getCompressedPubkey()])}}">{{$publicKeyDto->getCompressedPubkey()}}</a>
+                                @endif
+                            </td>
+                        </tr>
+                        <tr>
                             <th>Tools</th>
                             <td>
                                 <a href="{{route('address_cluster', ['address' => $addressDto->getAddress(), 'currency'=>$currency])}}">Show addresses with same owner</a>

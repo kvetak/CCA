@@ -3,6 +3,7 @@
 namespace App\Model\Bitcoin;
 
 
+use App\Model\Base58Encoder;
 use Mdanter\Ecc\EccFactory;
 use Mdanter\Ecc\Math\NumberTheory;
 
@@ -46,6 +47,7 @@ class BitcoinLib
      * uncompressed public key.
      *
      * @param $key
+     * @throws \Exception
      * @return array|bool
      */
     public static function decompress_public_key($key)
@@ -75,7 +77,6 @@ class BitcoinLib
             $point = $curve->getPoint(gmp_init($x,10), $y);
         } catch (\Exception $e) {
             throw $e;
-//            throw new \InvalidArgumentException("Invalid public key");
         }
         return array(
             'x' => $x_coordinate,
@@ -181,5 +182,82 @@ class BitcoinLib
         $yHex = str_pad($yHex, 64, '0', STR_PAD_LEFT);
         $public_key = '04' . $xHex . $yHex;
         return ($compressed == true) ? self::compress_public_key($public_key) : $public_key;
+    }
+
+
+    /**
+     * Určí zda je veřejný klíč komprimovaný nebo ne
+     * @param $public_key string veřejný klíče v hexadecimálním formátu
+     * @return bool true pokud je klíč komprimovaný, jinak false
+     */
+    public static function is_compressed($public_key)
+    {
+        $firstByte = substr($public_key,0,2);
+        return ($firstByte == "02" || $firstByte == "03");
+    }
+
+    /**
+     * Vypočte bitcoin adresu z veřejného klíče
+     * @param $public_key String - hexadecimální reprezentace veřejného klíče
+     * @return string BTC adresa
+     */
+    public static function get_address_from_pubkey($public_key)
+    {
+        return self::get_address_from_hash(self::ripemd160_hash($public_key));
+    }
+
+    /**
+     * Vypočte čast hashe veřejného klíče po provedení ripemd160
+     *
+     * @param $public_key string hex
+     * @return string bin
+     */
+    public static function ripemd160_hash($public_key)
+    {
+        $SHA_HASH = hash("sha256",hex2bin($public_key));
+        $RIPEMD_HASH = hash("ripemd160",hex2bin($SHA_HASH));
+
+        return $RIPEMD_HASH;
+    }
+
+    /**
+     * @param $hash String - hexadecimální reprezentace RIPEMD160 hashe veřejného klíče
+     * @return string BTC adresa
+     */
+    public static function get_address_from_hash($hash)
+    {
+        $HASH_VER = "00".$hash; // add version before hash
+
+        $SHA_NEXT_HASH = hash("sha256",hex2bin($HASH_VER));
+        $SHA_NEXT_HASH2 = hash("sha256",hex2bin($SHA_NEXT_HASH));
+
+        $checksum = substr($SHA_NEXT_HASH2,0,8);
+
+        $binary_addr = $HASH_VER . $checksum;
+
+        return "1".Base58Encoder::bc_base58_encode(Base58Encoder::bc_hexdec($binary_addr));
+    }
+
+    /**
+     * Výpočet adresy pro scripthash metodu
+     * @param $script_hash String - hash scriptu
+     * @return string BTC adresa
+     */
+    public static function get_address_from_script($script_hash)
+    {
+        $HASH_VER = "05".$script_hash; // add version before hash
+
+        $SHA_NEXT_HASH = hash("sha256",hex2bin($HASH_VER));
+        $SHA_NEXT_HASH2 = hash("sha256",hex2bin($SHA_NEXT_HASH));
+
+        $checksum = substr($SHA_NEXT_HASH2,0,8);
+
+        $binary_addr = $HASH_VER . $checksum;
+
+        /**
+         * správně by se před výsledek mělo přidat číslo "3", ale z neznámého důvodu se tam toto číslo přidává
+         * již při výpočtu base58_encode
+         */
+        return Base58Encoder::bc_base58_encode(Base58Encoder::bc_hexdec($binary_addr));
     }
 }

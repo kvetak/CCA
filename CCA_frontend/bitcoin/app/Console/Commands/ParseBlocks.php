@@ -10,6 +10,7 @@ use App\Model\Bitcoin\BitcoinAddressModel;
 use App\Model\Bitcoin\BitcoinBlockModel;
 use App\Model\Bitcoin\BitcoinClusterModel;
 use App\Model\Bitcoin\BitcoinOutOfOrderBlockModel;
+use App\Model\Bitcoin\BitcoinPubkeyModel;
 use App\Model\Bitcoin\BitcoinTagModel;
 use App\Model\Bitcoin\BitcoinTransactionModel;
 use App\Model\Bitcoin\BitcoinUtils;
@@ -110,6 +111,11 @@ class ParseBlocks extends Command
     private $bitcoinTagModel;
 
     /**
+     * @var BitcoinPubkeyModel;
+     */
+    private $bitcoinPubkeyModel;
+
+    /**
      * @var ScriptPubkeyParser
      */
     private $scriptPubkeyParser;
@@ -118,6 +124,7 @@ class ParseBlocks extends Command
      * @var ScriptSigParser
      */
     private $scriptSigParser;
+
 
 
     /**
@@ -140,6 +147,7 @@ class ParseBlocks extends Command
         $this->bitcoinOutOfOrderBlockModel= BitcoinOutOfOrderBlockModel::getInstance();
         $this->bitcoinClusterModel= BitcoinClusterModel::getInstance();
         $this->bitcoinTagModel = BitcoinTagModel::getInstance();
+        $this->bitcoinPubkeyModel = BitcoinPubkeyModel::getInstance();
         $this->scriptPubkeyParser=new ScriptPubkeyParser();
         $this->scriptSigParser=new ScriptSigParser($this->scriptPubkeyParser);
         $this->processing_block=null;
@@ -201,7 +209,7 @@ class ParseBlocks extends Command
         }
 
         // TODO vymyslet dávkování, ať se nenačítá ze vstupu 1 hodnota, ale něco většího
-        for ($i = 0 ; $i < $this->number_of_blocks ; $i++) // TODO: nastavit na hodnotu zadanou na vstupu
+        for ($i = 0 ; $i < 1000 ; $i++) // TODO: nastavit na hodnotu zadanou na vstupu
         {
             // načtení bloků ze souborů blockchainu
             $blocks= $parser->parse(1);
@@ -340,7 +348,9 @@ class ParseBlocks extends Command
                        $address_balances = $this->add_address_balance($address_balances, BitcoinUtils::get_billable_address($outputDto->getRedeemerDto()), -($outputDto->getValue()));
                        $input_clusterize_addresses[]=$billable_address;
                    }
-                   $inputDto->setParsedScriptSig($this->scriptSigParser->parse($script_sig,$outputDto->getRedeemerDto()));
+                   $parsedScriptSig=$this->scriptSigParser->parse($script_sig,$outputDto->getRedeemerDto());
+                   $inputDto->setParsedScriptSig($parsedScriptSig);
+                   $this->bitcoinPubkeyModel->clusterizeKeys($parsedScriptSig->getPubkeys());
 
                    $this->bitcoinTransactionModel->updateTransactionOutput($inputDto->getTxid(),$inputDto->getVout(),$outputDto);
                    $sum_of_transaction_inputs += $inputDto->getValue();
@@ -366,6 +376,7 @@ class ParseBlocks extends Command
                $outputDto->setRedeemerDto($redeemerDto);
 
                $address_balances = $this->add_address_balance($address_balances,BitcoinUtils::get_billable_address($redeemerDto), $outputDto->getValue());
+               $this->bitcoinPubkeyModel->clusterizeKeys($redeemerDto->getPubkeys());
 
                $sum_of_transaction_outputs += $outputDto->getValue();
                $outputDtos[]=$outputDto;
@@ -466,7 +477,7 @@ class ParseBlocks extends Command
         $hash = hash("sha256",hash("sha256",$transactionDto->getRawTransaction(),true));
         return $this->SwapOrder($hash);
 
-        // starý způsob jak počítat hash transakce, taky to jde ale když máme raw data transakce, tak to neín třeba
+        // starý způsob jak počítat hash transakce, taky to jde ale když máme raw data transakce, tak to není třeba
        /* $string="";
         $string.=$this->littleEndian($transactionDto->getVersion());
 
@@ -623,6 +634,7 @@ class ParseBlocks extends Command
         $this->bitcoinOutOfOrderBlockModel->deleteAllNodes();
         $this->bitcoinClusterModel->deleteAllNodes();
         $this->bitcoinTagModel->deleteAllNodes();
+        $this->bitcoinPubkeyModel->deleteAllNodes();
     }
 
     /**
@@ -633,5 +645,6 @@ class ParseBlocks extends Command
         $this->bitcoinBlockModel->createIndexes();
         $this->bitcoinTransactionModel->createIndexes();
         $this->bitcoinAddressModel->createIndexes();
+        $this->bitcoinPubkeyModel->createIndexes();
     }
 }

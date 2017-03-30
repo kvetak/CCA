@@ -34,8 +34,9 @@ class AddressController extends Controller
         $pagination->setPath(route('address_findone', ['address'=>$addressDto->getAddress(), 'currency' => $currency]));
         $skip               = ($pagination->currentPage() - 1) * $limit;
         $tags               = $addressModel->getTags($addressDto);
+        $publicKeyDto       = $addressModel->getPublicKey($addressDto);
 
-        return view('address/findOne', compact('addressDto','transactions', 'balance', 'pagination', 'currency','tags'));
+        return view('address/findOne', compact('addressDto','transactions', 'balance', 'pagination', 'currency','tags', 'publicKeyDto'));
     }
 
     /**

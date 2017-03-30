@@ -1,5 +1,5 @@
 <?php
-    use App\Model\Bitcoin\ScriptParser\AbstractScriptParser;
+    use App\Model\Bitcoin\ScriptParser\BaseScriptParser;
 ?>
 @extends('layout')
 @section('content')
