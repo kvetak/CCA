@@ -21,6 +21,8 @@ abstract class BaseNeoModel
     const RELATION_TYPE="type",
         RELATION_PROPERTIES="properties";
 
+    const RETURN_NODES="nodes",
+        RETURN_RELATIONS="relations";
 
     /**
      * Klient databáze
@@ -342,7 +344,14 @@ abstract class BaseNeoModel
         return $this->nodes_to_array($result->records());
     }
 
-
+    /**
+     * Najde uzly vzdálený přes několik uzlý skrz relace
+     *
+     * @param array $src_attributes
+     * @param array $relation_names
+     * @param null $source_node
+     * @return array
+     */
     protected function findMultipleHopRelation(array $src_attributes, array $relation_names, $source_node = null)
     {
         $relation_count=0;
@@ -360,6 +369,35 @@ abstract class BaseNeoModel
 
         $result=$this->neoConnection->run($query);
         return $this->nodes_to_array($result->records());
+    }
+
+    /**
+     * Vrátí sousední uzly porpojené danou relací a atributy této relace
+     *
+     *
+     * @param array $src_attributes
+     * @param string $relation_name
+     * @return array Pole obsahuje na indexu self::RETURN_NODES pole nalezených uzlů a jejich properties,
+     *      na indexu  self::RETURN_RELATIONS pole relací a jejich properties
+     */
+    protected function findRelatedNodesAndRelation(array $src_attributes, $relation_name)
+    {
+        $query="MATCH (n:".$this->getEffectiveNodeName().")"
+            ."-[rel:".$relation_name."]->(m) "
+            ."  ".$this->serializeWhereAttributes("n",$src_attributes)."
+            return m,rel";
+
+        $result=$this->neoConnection->run($query);
+
+        $return=array();
+
+        foreach ($result->records() as $key => $record)
+        {
+            $return[self::RETURN_NODES][$key] = $record->values()[0]->values();
+            $return[self::RETURN_RELATIONS][$key] = $record->values()[1]->values();
+        }
+
+        return $return;
     }
 
     /**

@@ -3,6 +3,7 @@
 namespace App\Model\Bitcoin;
 
 use App\Model\Bitcoin\Dto\BitcoinAddressDto;
+use App\Model\Bitcoin\Dto\BitcoinPubkeyDto;
 use App\Model\Bitcoin\Dto\BitcoinTagDto;
 use App\Model\Exceptions\TransactionNotFoundException;
 
@@ -208,7 +209,7 @@ class BitcoinAddressModel extends BaseBitcoinModel
     /**
      * Vrátí tagy, které josu spojeny s danou adresou
      *
-     * @param BitcoinAddressDto $dto Adresa jejíž tagy vyhledávám
+     * @param BitcoinAddressDto $addressDto Adresa jejíž tagy vyhledávám
      * @return array<BitcoinTagDto>
      */
     public function getTags(BitcoinAddressDto $addressDto)
@@ -229,6 +230,7 @@ class BitcoinAddressModel extends BaseBitcoinModel
     /**
      * Vrátí veřejný klíč, který odpovídá dané adrese, pokud je znám
      * @param BitcoinAddressDto $addressDto
+     * @return BitcoinPubkeyDto
      */
     public function getPublicKey(BitcoinAddressDto $addressDto)
     {
@@ -242,6 +244,31 @@ class BitcoinAddressModel extends BaseBitcoinModel
         }
 
         return BitcoinPubkeyModel::array_to_dto($data[0]);
+    }
+
+    /**
+     * Najde transakce ve kterých participuje tato adresa a přidá k nim změnu na účtu
+     *
+     * @param BitcoinAddressDto $addressDto
+     * @return array
+     */
+    public function findTransactions(BitcoinAddressDto $addressDto)
+    {
+        $data=$this->findRelatedNodesAndRelation(
+            array(self::DB_ADDRESS => $addressDto->getAddress()),
+            self::DB_REL_PARTICIPATE
+        );
+
+        $result=array();
+        $count = count($data[self::RETURN_NODES]);
+        for ($i=0 ; $i < $count ; $i++)
+        {
+            // zapíše číslo s explicitním znaménkem + nebo - před číslem
+            $balance_change = sprintf("%+d",$data[self::RETURN_RELATIONS][$i][self::DB_REL_PROP_BALANCE]);
+            $result[$data[self::RETURN_NODES][$i][BitcoinTransactionModel::DB_TRANS_TXID]]=$balance_change;
+        }
+
+        return $result;
     }
 
     /**

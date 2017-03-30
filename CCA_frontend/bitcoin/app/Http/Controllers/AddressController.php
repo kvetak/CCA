@@ -36,7 +36,9 @@ class AddressController extends Controller
         $tags               = $addressModel->getTags($addressDto);
         $publicKeyDto       = $addressModel->getPublicKey($addressDto);
 
-        return view('address/findOne', compact('addressDto','transactions', 'balance', 'pagination', 'currency','tags', 'publicKeyDto'));
+        $balanceChanges     = $addressModel->findTransactions($addressDto);
+
+        return view('address/findOne', compact('addressDto','transactions', 'balance', 'pagination', 'currency','tags', 'publicKeyDto', 'balanceChanges'));
     }
 
     /**
