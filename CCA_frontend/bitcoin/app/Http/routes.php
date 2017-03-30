@@ -54,6 +54,16 @@ Route::group(['middleware' => ['web'], 'prefix' => '{currency}'], function () {
         'uses'  => 'TransactionController@outputs',
     ]);
 
+    Route::get('transaction/{txid}/input/{inputNo}', [
+        'as'    =>  'transaction_input',
+        'uses'  =>  'TransactionController@inputDetail'
+    ]);
+
+    Route::get('transaction/{txid}/output/{outputNo}', [
+        'as'    =>  'transaction_output',
+        'uses'  =>  'TransactionController@outputDetail'
+    ]);
+
     Route::get('transaction/{txid}/structure', [
         'as'     => 'transaction_structure',
         'uses'  => 'TransactionController@structure',

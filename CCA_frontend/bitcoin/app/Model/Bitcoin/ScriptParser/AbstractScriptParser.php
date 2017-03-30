@@ -1,10 +1,4 @@
 <?php
-/**
- * Created by PhpStorm.
- * User: martin
- * Date: 10.3.17
- * Time: 14:30
- */
 
 namespace App\Model\Bitcoin\ScriptParser;
 

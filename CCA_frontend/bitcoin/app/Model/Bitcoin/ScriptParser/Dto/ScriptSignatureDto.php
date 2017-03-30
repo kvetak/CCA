@@ -1,10 +1,4 @@
 <?php
-/**
- * Created by PhpStorm.
- * User: martin
- * Date: 10.3.17
- * Time: 14:52
- */
 
 namespace App\Model\Bitcoin\ScriptParser\Dto;
 
@@ -24,6 +18,7 @@ class ScriptSignatureDto
      * ScriptSignatureDto constructor.
      * @param string $r
      * @param $s
+     * @param $sig_type - typ podpisu
      */
     public function __construct($r, $s, $sig_type)
     {

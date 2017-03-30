@@ -45,6 +45,43 @@ class TransactionController extends Controller
     }
 
     /**
+     * Zobrazení detailu vstupu jedné transakce
+     *
+     * @param $currency
+     * @param $txid int txid hledané transakce
+     * @param $inputNo int číslo vstupu
+     *
+     * @return \Illuminate\Contracts\View\Factory|\Illuminate\View\View
+     */
+    public function inputDetail($currency, $txid, $inputNo)
+    {
+        $transactionModel               = CurrencyType::transactionModel($currency);
+        $transaction                    = $transactionModel->findByTxId($txid);
+
+        $inputDto   = $transaction->getInputs()[$inputNo];
+
+        return view('transaction/inputDetail',compact('currency','inputDto','txid','inputNo'));
+    }
+
+    /**
+     * Zobrazení detailu výstupu jedné transakce
+     *
+     * @param $currency
+     * @param $txid int txid hledané transakce
+     * @param $outputNo int číslo výstupu
+     * @return \Illuminate\Contracts\View\Factory|\Illuminate\View\View
+     */
+    public function outputDetail($currency, $txid, $outputNo)
+    {
+        $transactionModel               = CurrencyType::transactionModel($currency);
+        $transaction                    = $transactionModel->findByTxId($txid);
+
+        $outputDto  = $transaction->getOutputs()[$outputNo];
+
+        return view('transaction/outputDetail',compact('currency','outputDto','txid','outputNo'));
+    }
+
+    /**
      * Graficka vizualizacia transakcie.
      * @param $txid
      * @return \Illuminate\Contracts\View\Factory|\Illuminate\View\View

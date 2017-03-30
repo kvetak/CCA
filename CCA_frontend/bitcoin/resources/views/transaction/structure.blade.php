@@ -9,18 +9,21 @@
     </div>
 </div>
 <div class="vertical-align">
-    <div class="col-md-5">
+    <div class="col-md-6" style="padding:0;">
         <ul style="padding: 0;">
             @if($transactionDto->isCoinbase())
                 <li>Coinbase transaction without inputs</li>
             @else
-                @foreach( $transactionDto->getInputs()  as $vin)
+                @foreach( $transactionDto->getInputs() as $number => $vin)
                 <?php
                       $address = $vin->getSerializedAddress();
                 ?>
-                <li><a href="{{route('transaction_findone',['txid'=>  $vin->getTxid(), 'currency' => $currency])}}" class="glyphicon glyphicon-arrow-left"/>&nbsp;
+                <li>
+                    <a href="{{route('transaction_findone',['txid'=>  $vin->getTxid(), 'currency' => $currency])}}" class="glyphicon glyphicon-arrow-left"></a>&nbsp;
+                    <a href="{{route('transaction_input',['txid'=> $transactionDto->getTxid(), 'currency' => $currency, 'inputNo' => $number])}}" class="glyphicon glyphicon-search" title="Input detail"></a>&nbsp;
                     <a href="{{route('address_findone',['address'=> $address, 'currency' => $currency])}}">{{$address}}</a>
-                    <small> ({{$vin->getValue()}} {{CurrencyType::currencyUnit($currency)}})</small></li>
+                    <small> ({{$vin->getValue()}} {{CurrencyType::currencyUnit($currency)}})</small>
+                </li>
                 @endforeach
             @endif
         </ul>
@@ -28,15 +31,16 @@
     <div class="col-xs-1">
         <span class="glyphicon glyphicon-chevron-right"></span>
     </div>
-    <div class="col-md-5">
+    <div class="col-md-6">
         <ul class="center-block" style="padding: 0;">
-            @foreach($transactionDto->getOutputs() as $vout)
+            @foreach($transactionDto->getOutputs() as $number => $vout)
             <li>
                 <?php
                     $address=$vout->getSerializedAddress();
                 ?>
-                <a href="{{route('address_findone',['address'=> $address, 'currency' => $currency])}}">{{$address}}
-                </a> <small>({{$vout->getValue()}} {{CurrencyType::currencyUnit($currency)}})</small>
+                <a href="{{route('address_findone',['address'=> $address, 'currency' => $currency])}}">{{$address}}</a>
+                <small>({{$vout->getValue()}} {{CurrencyType::currencyUnit($currency)}})</small>
+                <a href="{{route('transaction_output',['txid'=> $transactionDto->getTxid(), 'currency' => $currency, 'outputNo' => $number])}}" class="glyphicon glyphicon-search" title="Output detail"></a>&nbsp;
                 @if($vout->isSpent())
                     <a href="{{route('transaction_findone', ['txid' =>$vout->getSpentTxid(), 'currency' => $currency])}}" class="glyphicon glyphicon-arrow-right"></a>
                 @else

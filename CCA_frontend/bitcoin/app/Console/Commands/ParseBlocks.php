@@ -201,7 +201,7 @@ class ParseBlocks extends Command
         }
 
         // TODO vymyslet dávkování, ať se nenačítá ze vstupu 1 hodnota, ale něco většího
-        for ($i = 0 ; $i < 500 ; $i++) // TODO: nastavit na hodnotu zadanou na vstupu
+        for ($i = 0 ; $i < $this->number_of_blocks ; $i++) // TODO: nastavit na hodnotu zadanou na vstupu
         {
             // načtení bloků ze souborů blockchainu
             $blocks= $parser->parse(1);

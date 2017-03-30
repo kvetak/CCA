@@ -42,7 +42,7 @@ class BitcoinTransactionInputDto
     private $parsedScriptSig;
 
     /**
-     * Ze které se brali BTC na tomto vstupu transakce
+     * Serializovaná adresa ze které se brali BTC na tomto vstupu transakce
      * @var string - Serializovaná adresa
      */
     private $serializedAddress;

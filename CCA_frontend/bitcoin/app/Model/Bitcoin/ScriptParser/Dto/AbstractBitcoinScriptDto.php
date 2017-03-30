@@ -1,10 +1,4 @@
 <?php
-/**
- * Created by PhpStorm.
- * User: martin
- * Date: 10.3.17
- * Time: 14:46
- */
 
 namespace App\Model\Bitcoin\ScriptParser\Dto;
 
@@ -20,6 +14,15 @@ abstract class AbstractBitcoinScriptDto
         PAY_TO_MULTISIG=3,
         PAY_NULLDATA=4,
         SCRIPT_UNKNOWN=5;
+
+    const PAY_METHODS=[
+        "0" => "PAY TO PUBLIC KEY (P2PK)",
+        "1" => "PAY TO HASH OF PUBLIC KEY (P2PKH)",
+        "2" => "PAY TO SCRIPT HASH (P2SH)",
+        "3" => "PAY TO MULTISIG",
+        "4" => "NULLDATA",
+        "5" => "UNKNOWN PAY METHOD"
+    ];
 
     /**
      * Type of transaction script

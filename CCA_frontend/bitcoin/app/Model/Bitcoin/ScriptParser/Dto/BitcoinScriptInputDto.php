@@ -1,10 +1,4 @@
 <?php
-/**
- * Created by PhpStorm.
- * User: martin
- * Date: 10.3.17
- * Time: 14:45
- */
 
 namespace App\Model\Bitcoin\ScriptParser\Dto;
 
@@ -24,10 +18,16 @@ class BitcoinScriptInputDto extends AbstractBitcoinScriptDto
     private $signatures;
 
     /**
+     * In case of pay to scriptHash, there is stored pubkey script
+     * @var string
+     */
+    private $pubkeyScript;
+
+    /**
      * In case if pay to scriptHash, there is stored script present in scriptSig
      * @var BitcoinScriptRedeemerDto
      */
-    private $pubkeyScript;
+    private $parserPubkeyScript;
 
     /**
      * BitcoinScriptInputDto constructor.
@@ -74,13 +74,29 @@ class BitcoinScriptInputDto extends AbstractBitcoinScriptDto
     /**
      * @return BitcoinScriptRedeemerDto
      */
+    public function getParserPubkeyScript()
+    {
+        return $this->parserPubkeyScript;
+    }
+
+    /**
+     * @param BitcoinScriptRedeemerDto $parserPubkeyScript
+     */
+    public function setParserPubkeyScript($parserPubkeyScript)
+    {
+        $this->parserPubkeyScript = $parserPubkeyScript;
+    }
+
+    /**
+     * @return string
+     */
     public function getPubkeyScript()
     {
         return $this->pubkeyScript;
     }
 
     /**
-     * @param BitcoinScriptRedeemerDto $pubkeyScript
+     * @param string $pubkeyScript
      */
     public function setPubkeyScript($pubkeyScript)
     {

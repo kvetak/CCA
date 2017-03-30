@@ -154,7 +154,8 @@ class ScriptSigParser extends AbstractScriptParser
                 array(),
                 array($signature)
             );
-            $dto->setPubkeyScript($this->scriptPubkeyParser->parse($pubkey_script));
+            $dto->setParserPubkeyScript($this->scriptPubkeyParser->parse($pubkey_script));
+            $dto->setPubkeyScript($pubkey_script);
             return $dto;
         }
         // it's multisig transaction
@@ -181,7 +182,8 @@ class ScriptSigParser extends AbstractScriptParser
                 array(),
                 $signatures
             );
-            $dto->setPubkeyScript($this->scriptPubkeyParser->parse($pubkey_script));
+            $dto->setParserPubkeyScript($this->scriptPubkeyParser->parse($pubkey_script));
+            $dto->setPubkeyScript($pubkey_script);
             return $dto;
         }
         else
@@ -220,9 +222,9 @@ class ScriptSigParser extends AbstractScriptParser
         }
 
         $s_length=ord($script[$begin+$r_length+5]);
-        $s_coord = substr($script,$begin+$r_length+6, $s_length);
+        $s_coord = substr($script, $begin + $r_length+  6, $s_length);
 
-        $sig_type=bin2hex(substr($script,$s_length + $r_length + 6,1));
+        $sig_type=bin2hex(substr($script, $begin + $s_length + $r_length + 6,1));
         $signature = new ScriptSignatureDto(bin2hex($r_coord) , bin2hex($s_coord),$sig_type);
 
         $sig_length=$s_length + $r_length + 7;
