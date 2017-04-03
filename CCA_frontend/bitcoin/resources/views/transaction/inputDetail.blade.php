@@ -84,7 +84,7 @@
                             <tr>
                                 <td><small>{{$signature->getR()}}</small></td>
                                 <td><small>{{$signature->getS()}}</small></td>
-                                <td><small>{{AbstractScriptParser::SIG_HASH_TYPES[$signature->getSignatureType()]}}</small></td>
+                                <td><small>{{BaseScriptParser::SIG_HASH_TYPES[$signature->getSignatureType()]}}</small></td>
                             </tr>
                         @endforeach
                     </table>

@@ -83,7 +83,11 @@ class ScriptSigParser extends BaseScriptParser
         $parsed_length=1;
         $signature = $this->parse_signature($sig_script,$parsed_length,$length);
         $parsed_length += $length;
-        $pubkey = substr($sig_script,$parsed_length);
+
+        $pubkey_length = substr($sig_script, $parsed_length , 1);
+        $parsed_length+=1;
+
+        $pubkey = substr($sig_script,$parsed_length, ord($pubkey_length));
         return new BitcoinScriptInputDto(
             BitcoinScriptInputDto::PAY_TO_HASH_PUBKEY,
             array(bin2hex($pubkey)),

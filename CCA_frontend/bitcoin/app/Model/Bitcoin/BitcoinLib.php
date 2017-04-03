@@ -16,6 +16,9 @@ use Mdanter\Ecc\Math\NumberTheory;
  */
 class BitcoinLib
 {
+    const BTC_UNCOMPRESSED_KEY_LENGTH = 130;
+    CONST BTC_COMPRESSED_KEY_LENGTH = 66;
+
     /**
      * Compress Public Key
      *
@@ -182,6 +185,24 @@ class BitcoinLib
         $yHex = str_pad($yHex, 64, '0', STR_PAD_LEFT);
         $public_key = '04' . $xHex . $yHex;
         return ($compressed == true) ? self::compress_public_key($public_key) : $public_key;
+    }
+
+    /**
+     * ověří že vstup je validní veřejný klíč
+     * @param $public_key
+     */
+    public static function is_public_key($public_key)
+    {
+        $firstByte = substr($public_key,0,2);
+        if ($firstByte == "04")
+        {
+            return strlen($public_key) == self::BTC_UNCOMPRESSED_KEY_LENGTH;
+        }
+        else if ($firstByte == "02" || $firstByte == "03")
+        {
+            return strlen($public_key) == self::BTC_COMPRESSED_KEY_LENGTH;
+        }
+        return false;
     }
 
 

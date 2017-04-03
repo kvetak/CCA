@@ -219,6 +219,11 @@ class BitcoinPubkeyModel extends BaseBitcoinModel
      */
     private function getCompressedPubkey($publicKey)
     {
+        if (!BitcoinLib::is_public_key($publicKey))
+        {
+            throw new \InvalidArgumentException("Not a valid public key: ".$publicKey);
+        }
+
         if (BitcoinLib::is_compressed($publicKey))
         {
             return $publicKey;
