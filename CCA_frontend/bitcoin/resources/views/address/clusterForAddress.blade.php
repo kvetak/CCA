@@ -86,8 +86,13 @@
                         <tbody>
                         @foreach($addresses as $address)
                             <tr>
-                                <th><a href="{{route('address_findone', ['address'=>$address->getAddress(), 'currency' => $currency])}}">{{$address->getAddress()}}</a></th>
-                                <td>{{round($address->getBalance(), 8) + 0}} {{CurrencyType::currencyUnit($currency)}}</td>
+                                <th>
+                                    <a href="{{route('address_findone', ['address'=>$address->getAddress()->getAddress(), 'currency' => $currency])}}">{{$address->getAddress()->getAddress()}}</a>
+                                    @if(!$address->isUsed())
+                                        (unused)
+                                    @endif
+                                </th>
+                                <td>{{round($address->getAddress()->getBalance(), 8) + 0}} {{CurrencyType::currencyUnit($currency)}}</td>
                             </tr>
                         @endforeach
                         </tbody>

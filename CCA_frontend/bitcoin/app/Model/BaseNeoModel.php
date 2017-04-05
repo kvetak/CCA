@@ -22,7 +22,8 @@ abstract class BaseNeoModel
         RELATION_PROPERTIES="properties";
 
     const RETURN_NODES="nodes",
-        RETURN_RELATIONS="relations";
+        RETURN_RELATIONS="relations",
+        RETURN_RELATION_COUNT="rel_cnt";
 
     /**
      * Klient databáze
@@ -372,7 +373,7 @@ abstract class BaseNeoModel
     }
 
     /**
-     * Vrátí sousední uzly porpojené danou relací a atributy této relace
+     * Vrátí sousední uzly propojené danou relací a atributy této relace
      *
      *
      * @param array $src_attributes
@@ -388,7 +389,6 @@ abstract class BaseNeoModel
             return m,rel";
 
         $result=$this->neoConnection->run($query);
-
         $return=array();
 
         foreach ($result->records() as $key => $record)
@@ -397,6 +397,35 @@ abstract class BaseNeoModel
             $return[self::RETURN_RELATIONS][$key] = $record->values()[1]->values();
         }
 
+        return $return;
+    }
+
+    /**
+     * Najde uzel n, dle $src_attributes, podle vazby $relation_name, najde sousední uzly r,
+     * vrací uzly r a množství jejich vazeb, které se jmenují $count_relation_name
+     *
+     * @param array $src_attributes Atributy zdrojového uzlu
+     * @param string $relation_name Název relace mezi uzly n a r
+     * @param string $count_relation_name název relace která se počítá u uzlů r
+     * @return array Pole obsahuje na indexu self::RETURN_NODES uzly r
+     *  a na indexu self::RETURN_RELATION_COUNT kardinalitu vazeb
+     */
+    protected function findRelatedNodesAndTheirRelationCount(array $src_attributes, $relation_name, $count_relation_name)
+    {
+        $query = "MATCH (n:".$this->getEffectiveNodeName().") -[:".$relation_name."]->(r)
+            ".$this->serializeWhereAttributes("n",$src_attributes)."
+            WITH r
+            OPTIONAL MATCH (r)-[rel:".$count_relation_name."]->()
+            RETURN r, count(rel) as cnt";
+
+        $result = $this->neoConnection->run($query);
+        $return=array();
+
+        foreach ($result->records() as $key => $record)
+        {
+            $return[self::RETURN_NODES][$key] = $record->values()[0]->values();
+            $return[self::RETURN_RELATION_COUNT][$key] = $record->values()[1];
+        }
         return $return;
     }
 

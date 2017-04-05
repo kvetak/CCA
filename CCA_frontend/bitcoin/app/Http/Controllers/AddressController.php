@@ -68,7 +68,7 @@ class AddressController extends Controller
 //        $pagination->setPath(route('address_cluster', ['address'=>$addressDto->getAddress(), 'currency' => $currency]));
 //        $skip       = ($pagination->currentPage() - 1) * $limit;
 //        $addresses  = $cluster->getAddresses($limit, $skip)->sort(['balance' => -1]);
-        $addresses  = $clusterModel->getAddressesInCluster($cluster);
+        $addresses  = $clusterModel->getDisplayAddressInCluster($cluster);
         $addressTags       = $clusterModel->getAddressTags($cluster);
         return view('address/clusterForAddress', compact('addressDto', 'cluster', 'pagination', 'addresses', 'currency','clusterModel', 'addressTags'));
     }

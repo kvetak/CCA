@@ -2,6 +2,7 @@
 namespace App\Model\Bitcoin;
 use App\Model\Bitcoin\Dto\BitcoinAddressDto;
 use App\Model\Bitcoin\Dto\BitcoinAddressTagDto;
+use App\Model\Bitcoin\Dto\BitcoinAddressUsageDto;
 use App\Model\Bitcoin\Dto\BitcoinClusterDto;
 
 /**
@@ -133,6 +134,35 @@ class BitcoinClusterModel extends BaseBitcoinModel
             $addressDtos[]=$this->bitcoinAddressModel->array_to_dto($address);
         }
         return $addressDtos;
+    }
+
+    /**
+     * Najde adresy v clusteru a k nim použití adres
+     *
+     * @param BitcoinClusterDto $clusterDto
+     * @return array<getDisplayAddressInCluster>
+     */
+    public function getDisplayAddressInCluster(BitcoinClusterDto $clusterDto)
+    {
+        $data = $this->findRelatedNodesAndTheirRelationCount(
+            array(self::DB_ID => $clusterDto->getId()),
+            self::DB_REL_CONTAINS,
+            BitcoinAddressModel::DB_REL_PARTICIPATE
+        );
+
+        $addressUsedDtos=array();
+        $count = count($data[self::RETURN_NODES]);
+        for ($i=0 ; $i < $count ; $i++)
+        {
+            $addressDto=BitcoinAddressModel::array_to_dto($data[self::RETURN_NODES][$i]);
+
+            $dto=new BitcoinAddressUsageDto();
+            $dto->setAddress($addressDto);
+            $dto->setUsed($data[self::RETURN_RELATION_COUNT][$i] > 0);
+            $addressUsedDtos[]=$dto;
+        }
+
+        return $addressUsedDtos;
     }
 
     /**
