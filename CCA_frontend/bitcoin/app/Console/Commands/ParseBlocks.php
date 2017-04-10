@@ -18,6 +18,7 @@ use App\Model\Bitcoin\Dto\BitcoinBlockDto;
 use App\Model\Bitcoin\Dto\BitcoinTransactionDto;
 use App\Model\Bitcoin\Dto\BitcoinTransactionInputDto;
 use App\Model\Bitcoin\Dto\BitcoinTransactionOutputDto;
+use App\Model\Bitcoin\Dto\BitcoinTransactionPaymentDto;
 use App\Model\Bitcoin\ScriptParser\ScriptPubkeyParser;
 use App\Model\Bitcoin\ScriptParser\ScriptSigParser;
 use App\Model\Blockchain\Parser\BlockchainParser;
@@ -312,6 +313,7 @@ class ParseBlocks extends Command
             $address_balances=array();
 
             $inputDtos=array();
+            $paymentDtos=array();
             // zpracování vstupů transakce
             foreach ($inputs as $input)
             {
@@ -354,6 +356,14 @@ class ParseBlocks extends Command
 
                    $this->bitcoinTransactionModel->updateTransactionOutput($inputDto->getTxid(),$inputDto->getVout(),$outputDto);
                    $sum_of_transaction_inputs += $inputDto->getValue();
+
+                   $paymentDto= new BitcoinTransactionPaymentDto();
+                   $paymentDto->setPaysTo($txid);
+                   $paymentDto->setPaysFrom($inputDto->getTxid());
+                   $paymentDto->setAddress($inputDto->getSerializedAddress());
+                   $paymentDto->setValue($inputDto->getValue());
+
+                   $paymentDtos[]=$paymentDto;
                }
                $inputDtos[]=$inputDto;
            }
@@ -405,6 +415,10 @@ class ParseBlocks extends Command
 
             $this->store_address_balance_changes($address_balances,$txid);
             $this->bitcoinClusterModel->clusterizeAddresses(array_unique($input_clusterize_addresses));
+
+            foreach ($paymentDtos as $paymentDto) {
+                $this->bitcoinTransactionModel->addPaymentRelation($paymentDto);
+            }
         }
         $bitcoinBlockDto->setSumOfInputs($sum_of_inputs);
         $bitcoinBlockDto->setSumOfOutputs($sum_of_outputs);

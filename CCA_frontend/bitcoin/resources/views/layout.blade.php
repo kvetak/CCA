@@ -6,9 +6,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="description" content="">
     <meta name="author" content="Bc. Tomáš Drozda">
+    <meta name="author" content="Bc. Martin Očenáš">
     <title>Cryptocurrency blockchain analysis</title>
     <link rel="stylesheet" href="/css/app.css"/>
-    <script type="text/javascript" src="http://code.jquery.com/jquery-1.12.0.min.js"></script>
+    <script type="text/javascript" src="/js/jquery-1.12.0.min.js"></script>
     <script type="text/javascript" src="/js/bootstrap.min.js"></script>
 
     @stack('styles')
@@ -25,8 +26,9 @@
             </button>
             <a class="navbar-brand" href="{{route('block_findall', ['currency' => 'bitcoin'])}}">Cryptocurrency blockchain analysis</a>
             <ul class="nav navbar-nav navbar-right">
-                <li><a href="{{route('block_findall', ['currency' => 'bitcoin'])}}">Bitcoin blocks</a></li>
-                <li><a href="{{route('block_findall', ['currency' => 'litecoin'])}}">Litecoin blocks</a></li>
+              {{--  <li><a href="{{route('block_findall', ['currency' => 'bitcoin'])}}">Bitcoin blocks</a></li>
+                <li><a href="{{route('block_findall', ['currency' => 'litecoin'])}}">Litecoin blocks</a></li>--}}
+                <li><a href="{{route("transaction_search_visualize", ["currency" => "bitcoin"])}}">Visualize transactions</a></li>
             </ul>
         </div>
         <div id="navbar" class="navbar-collapse collapse">

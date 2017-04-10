@@ -1,7 +1,9 @@
 <?php
 namespace App\Model\Bitcoin;
 use App\Model\Bitcoin\Dto\BitcoinTransactionDto;
+use App\Model\Bitcoin\Dto\BitcoinTransactionGraphDto;
 use App\Model\Bitcoin\Dto\BitcoinTransactionOutputDto;
+use App\Model\Bitcoin\Dto\BitcoinTransactionPaymentDto;
 use App\Model\Exceptions\TransactionNotFoundException;
 
 /**
@@ -30,12 +32,11 @@ class BitcoinTransactionModel extends BaseBitcoinModel
         DB_TRANS_UNIQUE_INPUT_ADDRESSES="unique_input_addresses",
         DB_COINBASE="coinbase";
 
-    /**
-     * Konstanty pre identifikaciu vstupov a vystupov.
-     */
-    const   INPUTS_OUTPUTS_TYPE_INPUT = 1,
-            INPUTS_OUTPUTS_TYPE_OUTPUT = 2;
-
+    const DB_REL_PAYS_TO="pays_to",
+        DB_REL_PROP_FROM="from",
+        DB_REL_PROP_TO="to",
+        DB_REL_PROP_ADDRESS="addr",
+        DB_REL_PROP_VALUE="value";
 
     private static $instance;
     /**
@@ -214,6 +215,69 @@ class BitcoinTransactionModel extends BaseBitcoinModel
     }
 
     /**
+     * Najde graf transakcí, začínající z dané trasnakce a rozpínající se na oba směry
+     *
+     * @param string $txid identifikátor počáteční transakce
+     * @param int $forward_steps počet kroků, které se mají rozvinout do budoucnosti od zadané transakce
+     * @param int $backward_steps počet kroků, které se mají rozvinou do minulosti od zadané transakce
+     * @return BitcoinTransactionGraphDto graf transakcí
+     */
+    public function findTransactionGraph($txid, $forward_steps=2, $backward_steps=2)
+    {
+        $data=$this->findRelatedNodesAndRelations(
+            array(self::DB_TRANS_TXID => $txid),
+            self::DB_REL_PAYS_TO,
+            $forward_steps,
+            $backward_steps
+        );
+
+        $transactions=array();
+        foreach ($data[self::RETURN_NODES] as $node)
+        {
+            $transactions[]=$this->array_to_dto($node);
+        }
+
+        $payments=array();
+        foreach ($data[self::RETURN_RELATIONS] as $payment)
+        {
+            $paymentDto=new BitcoinTransactionPaymentDto();
+            $paymentDto->setValue($payment[self::DB_REL_PROP_VALUE]);
+            $paymentDto->setPaysFrom($payment[self::DB_REL_PROP_FROM]);
+            $paymentDto->setPaysTo($payment[self::DB_REL_PROP_TO]);
+            $paymentDto->setAddress($payment[self::DB_REL_PROP_ADDRESS]);
+
+            $payments[]=$paymentDto;
+        }
+
+        $graph=new BitcoinTransactionGraphDto();
+        $graph->setPayments($payments);
+        $graph->setTransactions($transactions);
+        return $graph;
+    }
+
+    /**
+     * Vytvoří relaci mezi dvěma transakcemi a uloží hodnotu platby
+     * @param BitcoinTransactionPaymentDto $dto
+     */
+    public function addPaymentRelation(BitcoinTransactionPaymentDto $dto)
+    {
+        $this->makeRelation(
+            array(self::DB_TRANS_TXID => $dto->getPaysFrom()),
+            array(
+                self::RELATION_TYPE => self::DB_REL_PAYS_TO,
+                self::RELATION_PROPERTIES => array(
+                    self::DB_REL_PROP_ADDRESS => $dto->getAddress(),
+                    self::DB_REL_PROP_FROM => $dto->getPaysFrom(),
+                    self::DB_REL_PROP_TO => $dto->getPaysTo(),
+                    self::DB_REL_PROP_VALUE => $dto->getValue()
+                )
+            ),
+            self::NODE_NAME,
+            array(self::DB_TRANS_TXID => $dto->getPaysTo())
+        );
+    }
+
+    /**
      * Vyhladanie transakcii zaradenych do specifickeho bloku.
      * @param $blockHash       - hash bloku
      * @param int $limit       - maximalny pocet vratenych zaznamov
@@ -233,85 +297,6 @@ class BitcoinTransactionModel extends BaseBitcoinModel
             $result[]=$this->array_to_dto($transaction);
         }
         return $result;
-    }
-
-    /**
-     * Metoda pre vyhladavanie transakcii medzi subjektami.
-     * @todo este treba doladit ...
-     * @param array $filterParams
-     * @return array
-     */
-    public static function findTransactionsBetweenSubjects(array $filterParams)
-    {
-        $from   = is_array($filterParams['from']) ? $filterParams['from'] : [$filterParams['from']];
-        $to     = is_array($filterParams['to']) ? $filterParams['to'] : [$filterParams['to']];
-        $filter = [
-            'inputsOutputs' => [
-                '$all'  => [
-                    [
-                        '$elemMatch'    => [
-                            'addresses' => ['$in'   => $from],
-                            'type'      => self::INPUTS_OUTPUTS_TYPE_INPUT,
-                        ],
-                    ],
-                    [
-                        '$elemMatch'    => [
-                            'addresses' => ['$in'   => $to],
-                            'type'      => self::INPUTS_OUTPUTS_TYPE_OUTPUT,
-                        ]
-                    ]
-                ]
-            ]
-        ];
-        $postFilter = [];
-//        if(Arrays::has($filterParams, 'timeFrom')){
-//            $filter = Arrays::set($filterParams, 'time.$gte', (int) $filterParams['timeFrom']);
-//        }
-//        if(Arrays::has($filterParams, 'timeTo')){
-//            $filter = Arrays::set($filterParams, 'time.$lte', (int) $filterParams['timeTo']);
-//        }
-//        if(Arrays::has($filterParams, 'valueFrom')){
-//            $postFilter = Arrays::set($postFilter, 'value.$gte', (double) $filterParams['valueFrom']);
-//        }
-//        if(Arrays::has($filterParams, 'valueTo')){
-//            $postFilter = Arrays::set($filterParams, 'value.$lte', (double) $filterParams['valueTo']);
-//        }
-        $model = new self;
-        $aggregationPipeline = [
-            [
-                '$match' => $filter,
-            ],
-            [
-                '$project'  => [
-                    'inputsOutputs' => true,
-                    'txid'          => true,
-                    '_id'           => false,
-                ]
-            ],
-            [
-                '$unwind'   => '$inputsOutputs'
-            ],
-            [
-                '$match'    => [
-                    'inputsOutputs.addresses' => ['$in'   => $to],
-                    'inputsOutputs.type'  => self::INPUTS_OUTPUTS_TYPE_OUTPUT,
-                ]
-            ],
-            [
-                '$group'    => [
-                    '_id'   => '$txid',
-                    'value' => [
-                        '$sum'  => '$inputsOutputs.value'
-                    ]
-                ]
-            ]
-        ];
-        if(count($postFilter)){
-            $aggregationPipeline[] =[
-                '$match'    => $postFilter
-            ];
-        }
-        return $model->collection()->aggregate($aggregationPipeline);
     }
 
     /**

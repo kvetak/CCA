@@ -39,6 +39,16 @@ Route::group(['middleware' => ['web'], 'prefix' => '{currency}'], function () {
         'uses'  => 'TransactionController@search',
     ]);
 
+    Route::get('transaction/visualize',[
+        'as'    => "transaction_search_visualize",
+        'uses'  => "TransactionController@searchAndVisualize"
+    ]);
+
+    Route::post('transaction/visualize',[
+        'as'    => "transaction_search_visualize_submit",
+        'uses'  => "TransactionController@searchAndVisualizeSubmit"
+    ]);
+
     Route::get('transaction/{txid}',[
         'as'    => 'transaction_findone',
         'uses'  => 'TransactionController@findOne'
@@ -49,9 +59,9 @@ Route::group(['middleware' => ['web'], 'prefix' => '{currency}'], function () {
         'uses'  => 'TransactionController@visualize',
     ]);
 
-    Route::get('transaction/{txid}/outputs', [
+    Route::get('transaction/{txid}/relations', [
         'as'     => 'transaction_outputs',
-        'uses'  => 'TransactionController@outputs',
+        'uses'  => 'TransactionController@relations',
     ]);
 
     Route::get('transaction/{txid}/input/{inputNo}', [

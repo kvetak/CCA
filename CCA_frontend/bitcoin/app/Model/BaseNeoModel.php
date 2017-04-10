@@ -6,6 +6,7 @@
 
 namespace App\Model;
 use GraphAware\Common\Result\Record;
+use GraphAware\Neo4j\Client\Formatter\Type\Node;
 
 /**
  * Class BaseNeoModel
@@ -396,9 +397,79 @@ abstract class BaseNeoModel
             $return[self::RETURN_NODES][$key] = $record->values()[0]->values();
             $return[self::RETURN_RELATIONS][$key] = $record->values()[1]->values();
         }
+        return $return;
+    }
+
+    /**
+     * Vrací uzly a relace mezi nimi, jde $forward_step po směru zadané relace a současně $backward_steps kroků proti směru
+     *
+     * @param array $src_attributes
+     * @param $relation_name
+     * @param int $forward_step
+     * @param int $backward_steps
+     * @return array [self::RETURN_NODES] - nalezené uzly
+     *  [self::RETURN_RELATIONS] - relace mezi uzly
+     */
+    protected function findRelatedNodesAndRelations(array $src_attributes, $relation_name, $forward_step=2, $backward_steps=0)
+    {
+        $return_vars=array("n");
+        $query="MATCH (n:".$this->getEffectiveNodeName().") ".$this->serializeWhereAttributes("n",$src_attributes)."
+        ";
+
+        if ($backward_steps > 0)
+        {
+            $query.="OPTIONAL MATCH (b)-[back_rel:".$relation_name."*1..".$backward_steps."]->(n)
+            ";
+            $return_vars[]="b";
+            $return_vars[]="back_rel";
+        }
+        if ($forward_step > 0)
+        {
+            $query.="OPTIONAL MATCH (n)-[rel:".$relation_name."*1..".$forward_step."]->(f)
+            ";
+            $return_vars[]="rel";
+            $return_vars[]="f";
+        }
+
+        $query.= " return ".implode(",",$return_vars);
+        $result=$this->neoConnection->run($query);
+
+        $return=array(
+            self::RETURN_NODES => array(),
+            self::RETURN_RELATIONS => array()
+        );
+
+        $node_ids_in_result=array();
+        $rel_ids_in_result=array();
+
+        foreach ($result->records() as $record)
+        {
+            foreach ($record->values() as $value)
+            {
+                if ($value instanceof Node)
+                {
+                    if (!in_array($value->identity(),$node_ids_in_result))
+                    {
+                        $node_ids_in_result[]=$value->identity();
+                        $return[self::RETURN_NODES][] = $value->values();
+                    }
+                }
+                elseif (is_array($value))
+                {
+                    foreach ($value as $array_field) {
+                        if (!in_array($array_field->identity(),$rel_ids_in_result)){
+                            $rel_ids_in_result[]=$array_field->identity();
+                            $return[self::RETURN_RELATIONS][] = $array_field->values();
+                        }
+                    }
+                }
+            }
+        }
 
         return $return;
     }
+
+
 
     /**
      * Najde uzel n, dle $src_attributes, podle vazby $relation_name, najde sousední uzly r,
@@ -468,7 +539,7 @@ abstract class BaseNeoModel
             $properties=array();
             foreach ($relationship_options[self::RELATION_PROPERTIES] as $prop => $value)
             {
-                $properties[]="$prop:$value";
+                $properties[]="$prop:'$value'";
             }
             $query.=" {".implode(",",$properties)."}";
         }

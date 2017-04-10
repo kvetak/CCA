@@ -1,293 +1,314 @@
 @extends('layout')
 @section('content')
-    <script src="https://d3js.org/d3.v3.min.js" charset="utf-8"></script>
+    <script type="text/javascript" src="/js/vis.js"></script>
     <div class="page-header">
         <h1>Transaction visualization<br/><small>{{$transaction->getTxid()}}</small></h1>
     </div>
-    <style type="text/css">
-        .node circle {
-            fill: #fff;
-            stroke: steelblue;
-            stroke-width: 2px;
-        }
 
-        .node {
-            font: 10px arial;
-            font-weight: bold;
-        }
-
-        .link {
-            fill: none;
-            stroke: #ccc;
-            stroke-width: 1.5px;
-        }
-
-        .value {
-            font-weight:bold;
-            fill:green;
-        }
-    </style>
-    <div class="row">
-        <div class="col-md-6">
-            <div class="panel panel-default">
-                <div class="panel-heading">
-                    <h3 class="panel-title">Legend</h3>
-                </div>
-                <div class="panel-body">
-                    <div class="row">
-                        <div class="col-xs-1">
-                            <svg height="30" width="30"><circle cx="15" cy="15" r="8" stroke="steelblue" stroke-width="2" fill="lightsteelblue" /></svg>
-                        </div>
-                        <div style="line-height: 30px; vertical-align: middle;">
-                            Output is unspent
-                        </div>
-                    </div>
-                    <div class="row">
-                        <div class="col-xs-1">
-                            <svg height="30" width="30"><circle cx="15" cy="15" r="8" stroke="steelblue" stroke-width="2" fill="orange" /></svg>
-                        </div>
-                        <div style="line-height: 30px; vertical-align: middle;">
-                            Output is spent - Click to show related transaction outputs
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
+    <div style="height:500px; width:100%;">
+        <h3>Ctrl+click on node/edge to go to detail about transaction/address</h3>
+        <div id="legend_div" style="height:100%; float:left; width:10%;"></div>
+        <div id="mynetwork" style="height:100%; width:90%; float:right;"></div>
     </div>
-    <div class="row">
-        <div class="col-md-12" style="overflow-x: scroll;">
-            <svg id="chart"></svg>
-        </div>
-    </div>
-
     <script type="text/javascript">
-        /**
-         * Vymazanie obsahu platna.
-         */
-        function init() {
-            $('#chart').empty();
-        }
-        $(document).ready(function() {
-            /**
-             * Vypocet polomeru kruhu na zaklade ciastky.
-             **/
-            var radius = function(d) {
-                return Math.min(25, Math.max(20 * (d.value / root.value), 5.0));
+        var nodes = null;
+        var edges = null;
+        var network = null;
+        var legend_network=null;
+        var currency = "{{\App\Model\CurrencyType::currencyUnit($currency)}}";
+
+        var rootTxid = "{{$transaction->getTxid()}}";
+
+        var transactions = {};
+        var payments = [];
+        var unspend_outputs = [];
+
+        var transaction_id_map=[];
+        var edge_id_map=[];
+
+        var existing_edges = [];
+
+        var transaction_node_id=100000;
+        var edge_id=1000;
+        var unspend_id=10;
+
+        @foreach($graph->getTransactions() as $transaction)
+            transactions["{{$transaction->getTxid()}}"]={
+                node_id: transaction_node_id++,
+                txid: "{{$transaction->getTxid()}}",
+                coinbase: "{{$transaction->isCoinbase()}}",
+                expanded_relations: false,
+                unspend_outputs: false
             };
-            var currency = "{{$currency}}";
-            var currencyUnit = "{{\App\Model\CurrencyType::currencyUnit($currency)}}";
-            var depth ;
-            var nodeCount;
-            /**
-             * Objekt grafu.
-             **/
-            var chart = $('#chart');
-            /**
-             * ID transakcie kde je pociatok grafu.
-             */
-            var rootTxId =  '{{$transaction->getTxid()}}';
-            /**
-             * Mapovanie uzlov grafu.
-             * @type {Array}
-             */
-            var nodeMap = [];
-            var root,
-                w = 100,
-                h = 10,
-                i = 0,
-                duration = 200;
+        @endforeach
 
-            var tree = d3.layout.tree().size([h, w]);
+        @foreach($graph->getPayments() as $payment)
+            payments.push(
+            {
+                edge_id: edge_id++,
+                address: "{{$payment->getAddress()}}",
+                pays_from: "{{$payment->getPaysFrom()}}",
+                pays_to: "{{$payment->getPaysTo()}}",
+                value: "{{$payment->getValue()}}"
+            }
+        );
+        @endforeach
 
-            var diagonal = d3.svg.diagonal().projection(function(d) { return [d.y, d.x]; });
+        @foreach($unspend_outputs as $output)
+            unspend_outputs.push({
+                node_id: unspend_id++,
+                txid: "{{$output->getTransactionTxid()}}",
+                address: "{{$output->getAddress()}}",
+                value: "{{$output->getValue()}}"
+        });
+        @endforeach
 
-            var vis;
+        // Called when the Visualization API is loaded.
+        function draw() {
+            // Create a data table with nodes.
+            nodes = new vis.DataSet();
 
-            var getRoot = function() {
+            // Create a data table with links.
+            edges = new vis.DataSet();
 
-                chart.empty();
-                nodeCount = 0;
-                depth = 1;
+            for (var trans_key in transactions)
+            {
+                var obj = transactions[trans_key];
+                add_node(obj);
+            }
 
-                vis = d3.select("#chart").append("svg:g").attr("transform", "translate(50, 0)");
+            payments.forEach(function(payment){
+                add_payment(payment);
+            });
 
-                d3.json('/'+currency+'/transaction/' + rootTxId + '/outputs', function(json) {
-                    nodeCount = json.children.length;
-                    nodeMap[json.name] = json;
+            unspend_outputs.forEach(function(output){
+               add_unspend_output(output);
+            });
 
-                    for (var i =0; i < json.children.length; ++i) {
-                        var child = json.children[i];
+            // create a network
+            var container = document.getElementById('mynetwork');
+            var data = {
+                nodes: nodes,
+                edges: edges
+            };
+            var options = {
+                width: "100%",
+                height: "100%",
+                nodes: {
+                    scaling: {
+                        min: 16,
+                        max: 32
+                    },
+                    font: {
+                        size:10
+                    }
+                },
+                edges: {
+                    color: "gray",
+                    smooth: true,
+                    arrows: "to",
+                    length: 200,
+                    font: {
+                        size:10
+                    }
+                },
+                physics:{
+                    barnesHut:{gravitationalConstant:-30000},
+                    stabilization: {iterations:2500}
+                },
 
-                        child.children = [];
+                groups: {
+                    coinbaseTransaction: {
+                        shape: 'dot',
+                        color: "#00dd00",
+                        size: 10
+                    },
 
-                        nodeMap[child.name] = child;
+                    rootTransaction: {
+                        shape: 'dot',
+                        color: "#2b7ce9",
+                        size: 30
+                    },
+
+                    transaction: {
+                        shape: 'dot',
+                        color: "#ff9900",
+                        size: 20
+                    },
+
+                    expandedTransaction: {
+                        shape: 'dot',
+                        color: '#44ccbb',
+                        size: 20
+                    },
+
+                    unspendOutput:{
+                        shape: "square",
+                        color: "#bb00bb",
+                        size: 8
+                    }
+                }
+            };
+            network = new vis.Network(container, data, options);
+
+
+            // legend
+            var legend_div = document.getElementById('legend_div');
+            var y = -200;
+            var step = 70;
+
+            var legend_nodes = new vis.DataSet();
+            legend_nodes.add({id: 1, x: 0, y: y, label: 'Root transaction', group: 'rootTransaction', fixed: true,  physics:false});
+            legend_nodes.add({id: 2, x: 0, y: y + step, label: 'Coinbase transaction', group: 'coinbaseTransaction', fixed: true,  physics:false});
+            legend_nodes.add({id: 3, x: 0, y: y + 2*step, label: 'Normal transaction', group: 'transaction', fixed: true,  physics:false});
+            legend_nodes.add({id: 4, x: 0, y: y + 3*step, label: 'Expanded transaction', group: 'expandedTransaction', fixed: true,  physics:false});
+            legend_nodes.add({id: 5, x: 0, y: y + 4*step, label: 'Unspend output', group: 'unspendOutput', fixed: true,  physics:false});
+
+            var legend_data = {
+                nodes: legend_nodes,
+                edges: new vis.DataSet()
+            };
+
+            legend_network = new vis.Network(legend_div, legend_data, options);
+
+            network.on( 'click', function(properties){
+                console.log("clicked: ",properties);
+                var clickedNodes = nodes.get(properties.nodes);
+                var clickedEdges = edges.get(properties.edges);
+
+
+                if (properties.event.pointers[0].ctrlKey)
+                {
+                    if (clickedNodes.length == 1){
+                        window.open("/{{$currency}}/transaction/"+transaction_id_map[clickedNodes[0].id].txid);
                     }
 
-                    update(root = json);
+                    else if (clickedEdges.length == 1){
+                        window.open("/{{$currency}}/address/"+edge_id_map[clickedEdges[0].id].address);
+                    }
+
+                    console.log('clicked nodes:', clickedNodes);
+                    console.log('clicked edges:', clickedEdges);
+                }
+                else
+                {
+                    if (clickedNodes.length == 1)
+                    {
+                        expand_node(transaction_id_map[clickedNodes[0].id])
+                    }
+                }
+            })
+        }
+
+        function add_node(node)
+        {
+            var group = null;
+
+            if (node.txid == rootTxid){
+                node.expanded_relations=true;
+                group = "rootTransaction";
+            } else if (node.coinbase){
+                group = "coinbaseTransaction"
+            } else {
+                group = "transaction";
+            }
+            transaction_id_map[node.node_id]=node;
+            nodes.add({id: node.node_id, label: node.txid, group: group});
+        }
+
+        function add_payment(payment)
+        {
+            edge_id_map[payment.edge_id]=payment;
+            existing_edges.push(payment.pays_from +"-" + payment.pays_to);
+
+            edges.add({id: payment.edge_id, from: transactions[payment.pays_from].node_id, to: transactions[payment.pays_to].node_id, label: payment.address + " (" + payment.value + " " +  currency + ")"});
+        }
+
+        function add_unspend_output(output)
+        {
+            transactions[output.txid].unspend_outputs=true;
+            nodes.add({id: output.node_id, group: "unspendOutput"});
+
+            edges.add({
+                from:  transactions[output.txid].node_id,
+                to: output.node_id,
+                label: output.address + " (" + output.value + " " + currency + ")",
+                length:50
+            });
+        }
+
+        function expand_node(node)
+        {
+            if (!node.expanded_relations){
+                node.expanded_relations=true;
+
+                var display_node=nodes.get(node.node_id);
+                if (display_node.group == "transaction") {
+                    display_node.group = "expandedTransaction";
+                    nodes.update(display_node);
+                }
+
+                $.get("/{{$currency}}/transaction/"+node.txid+"/relations",function (data){
+                    add_new_data(JSON.parse(data));
                 });
-            };
-            getRoot();
+            }
+        }
 
-            function update(source) {
-                /**
-                 * Upravy vysky a hlbky grafu.
-                 **/
-                chart.width((250*depth)+w);
-                chart.height(Math.max(window.innerHeight-350, h+(nodeCount*40)));
-
-                var nodes = d3.layout.tree().size([chart.height(), chart.width()-160]).nodes(root).reverse();
-
-                /**
-                 * Aktualizacia uzlov.
-                 **/
-                var node = vis.selectAll("g.node").data(nodes, function(d) { return d.id || (d.id = ++i); });
-
-                var nodeEnter = node.enter().append("svg:g").attr("class", "node").attr("transform", function(d) { return "translate(" + source.y + "," + source.x + ")"; });
-
-                var func = function(nodeEnter) {
-                    nodeEnter.append("svg:circle")
-                            .attr("r", function(d) {
-                                return radius(d);
-                            }).style("fill", function(d) { return (d.redeemed_tx == null || d.redeemed_tx.length == 0) ? "lightsteelblue" : "#fff"; }).on("click", function(d) {
-                        click(d, nodeEnter);
-                    });
-
-                    //Bitcoin Address
-                    nodeEnter.append("svg:a").attr('xlink:href', function(d){
-                        if(d.name == 'source'){
-                            return;
-                        }
-                        return '{{getenv('BASE_URL')}}'+'/'+currency+'/address/'+d.name;
-                    }).attr('target', '_blank').append("svg:text").attr("x", function(d) {
-                        if (d.name == null) return 0;
-                        return -(3 * d.name.length);
-                    }).attr("y", function (d) {
-                        return 13 + radius(d);
-                    }).text(function(d) {
-                        return d.name;
-                    });
-
-                    //Tag
-                    nodeEnter.append("svg:a").attr('xlink:href', function(d){
-                        if(d.url_tag != undefined && d.url_tag.length > 0){
-                            return d.url_tag;
-                        }
-                    }).attr('target', '_blank').append("svg:text").attr("x", function(d) {
-                        if (d.tag == null){
-                            return 0;
-                        }
-                        return -(3 * d.tag.length);
-                    }).attr("y", function (d) {
-                        return 30 + radius(d);
-                    }).text(function(d) {
-                        if(d.tag != undefined && d.tag.length > 0){
-                            return "Tag: " + d.tag;
-                        }
-                    });
-                }(nodeEnter);
-
-                /**
-                 * Mnozstvo fin prostredkov presuvanych na adresu.
-                 */
-                nodeEnter.append("svg:text").attr("x", function(d) {
-                    return radius(d) + 6;
-                }).attr("y", function (d) {
-                    return 4;
-                }).text(function(d) {
-                    return d.value + ' ' + currencyUnit;
-                }).attr("class", "value");
-
-                /**
-                 * Presuny uzlov n nove pozicie.
-                 */
-                nodeEnter.transition()
-                        .duration(duration)
-                        .attr("transform", function(d) {
-                            return "translate(" + d.y + "," + d.x + ")";
-                        }).style("opacity", 1).select("circle").style("fill", function(d) {
-                    return (d.redeemed_tx != null && d.redeemed_tx.length > 0) ? "orange" : "lightsteelblue";
-                });
-
-                node.transition()
-                        .duration(duration)
-                        .attr("transform", function(d) { return "translate(" + d.y + "," + d.x + ")"; })
-                        .style("opacity", 1);
-
-                node.exit().transition()
-                        .duration(duration)
-                        .attr("transform", function(d) { return "translate(" + source.y + "," + (source.x + 500) + ")"; })
-                        .style("opacity", 1e-6)
-                        .remove();
-
-                /**
-                 * Aktualizacia hran medzi uzlami.
-                 */
-                var link = vis.selectAll("path.link")
-                        .data(tree.links(nodes), function(d) { return d.target.id; });
-
-
-                link.enter().insert("svg:path", "g")
-                        .attr("class", "link")
-                        .attr("d", function(d) {
-                            var o = {x: source.x, y: source.y};
-                            return diagonal({source: o, target: o});
-                        })
-                        .transition()
-                        .duration(duration)
-                        .attr("d", diagonal);
-
-
-                link.transition()
-                        .duration(duration)
-                        .attr("d", diagonal);
-
-
-                node.selectAll("circle").style("fill", function(d) {
-                    return (d.redeemed_tx == null || d.redeemed_tx.length == 0) ? "lightsteelblue" : "orange";
-                }).attr("r", function(d) {
-                    return radius(d);
-                });
-
-                node.selectAll(".value").text(function(d) {
-                    return d.value + ' ' + currencyUnit;
-                });
-
+        function add_new_data(data)
+        {
+            var key;
+            for (key in data.transactions){
+                var entry = data.transactions[key];
+                if (!transactions.hasOwnProperty(entry.txid)) {
+                    var new_transaction=transactions[entry.txid] = {
+                        node_id: transaction_node_id++,
+                        txid: entry.txid,
+                        coinbase: entry.coinbase,
+                        expanded_inputs: false,
+                        expanded_outputs: false,
+                        unspend_outputs: false
+                    };
+                    add_node(new_transaction);
+                }
             }
 
-            var recursive = function(node, func) {
-                func(node);
-                if (node.children == null)
-                    return;
-
-                for (var i = 0; i < node.children.length; ++i) {
-                    recursive(node.children[i], func);
-                }
-            };
-
-
-            function click(node, nodeEnter) {
-                if (node.redeemed_tx == null || node.redeemed_tx.length == 0) {
-                    update(node);
-                    return;
-                }
-                var tmp = node.redeemed_tx;
-                node.redeemed_tx = [];
-                for (var ti = 0; ti < tmp.length; ++ti) {
-                    d3.json('/' + currency + '/transaction/' + tmp[ti] + '/outputs', function(json) {
-                        if (node.rendered == null) {
-                            if (node.depth == depth)
-                                ++depth;
-                            node.rendered = true;
-                        }
-                        node.children = json.children;
-                        nodeCount += node.children.length;
-                        update(node);
-                    });
+            for (key in data.payments)
+            {
+                var payment= data.payments[key];
+                if ($.inArray(payment.pays_from + "-" + payment.pays_to,existing_edges) == -1) {
+                    var new_payment = {
+                        edge_id: edge_id++,
+                        address: payment.address,
+                        pays_from: payment.pays_from,
+                        pays_to: payment.pays_to,
+                        value: payment.value
+                    };
+                    payments.push(new_payment);
+                    add_payment(payment);
                 }
             }
-        });
 
+            for (key in data.unused_outputs)
+            {
+                var output= data.unused_outputs[key];
+                if (!transactions[output.txid].unspend_outputs)
+                {
+                    transactions[output.txid].unspend_outputs=true;
+                    var new_uspend_output={
+                        node_id: unspend_id++,
+                        txid: output.txid,
+                        address: output.address,
+                        value: output.value
+                    };
+                    unspend_outputs.push(new_uspend_output);
+                    add_unspend_output(new_uspend_output);
+                }
+            }
+        }
 
+        $("body").ready(function(){
+            draw();
+        })
     </script>
 
 @stop

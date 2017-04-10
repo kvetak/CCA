@@ -2,14 +2,10 @@
 
 namespace App\Http\Controllers;
 
-use App\Model\Bitcoin\BitcoinAddressModel;
-use App\Model\Bitcoin\BitcoinTransactionModel;
-use App\Model\Bitcoin\BitcoinBlockModel;
-use App\Http\Requests;
+use App\Model\Bitcoin\Dto\BitcoinTransactionGraphDto;
+use App\Model\Bitcoin\Dto\BitcoinUnspendOutputDto;
 use App\Model\CurrencyType;
-use App\Model\InputsOutputsType;
-use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
-use Underscore\Types\Arrays;
+use Illuminate\Http\Request;
 
 /**
  * Radič realizujuci pracu s transakciami.
@@ -82,18 +78,140 @@ class TransactionController extends Controller
     }
 
     /**
-     * Graficka vizualizacia transakcie.
-     * @param $txid
+     * Zobrazí vyhledávácí formulář pro transakci, kterou chci vizualizovat
+     * @param $currency
      * @return \Illuminate\Contracts\View\Factory|\Illuminate\View\View
      */
-    public function visualize($currency, $txid)
+    public function searchAndVisualize($currency)
+    {
+        return view("transaction/searchAndVisualize",compact('currency'));
+    }
+
+    /**
+     * Zpracuje vyhledávací formulář pro vizualizaci transakci
+     *
+     * @param $currency
+     * @param Request $request
+     * @return \Illuminate\Contracts\View\Factory|\Illuminate\View\View
+     */
+    public function searchAndVisualizeSubmit($currency, Request $request)
+    {
+        $txid=$request->input("txid");
+        $transactionModel               = CurrencyType::transactionModel($currency);
+        $transaction                    = $transactionModel->existsByTxId($txid);
+
+        if ($transaction == null) {
+            \Session::flash('message', ['text' => 'Transaction not found ', 'type' => 'info']);
+            return view("transaction/searchAndVisualize", compact('currency'));
+        }
+
+        $step_forward=$request->input("forward");
+        $step_backward=$request->input("backward");
+
+        return $this->visualize($currency,$txid,$step_forward,$step_backward);
+    }
+
+    /**
+     * Graficka vizualizacia transakcie.
+     * @param $currency
+     * @param $txid
+     * @param $steps
+     * @return \Illuminate\Contracts\View\Factory|\Illuminate\View\View
+     */
+    public function visualize($currency, $txid, $forward_steps=3, $backward_steps=3)
     {
         $transactionModel               = CurrencyType::transactionModel($currency);
         $transaction                    = $transactionModel->findByTxId($txid);
-        if(empty($transaction)){
-            throw new NotFoundHttpException();
+
+        $graph=$transactionModel->findTransactionGraph($txid,$forward_steps,$backward_steps);
+
+        // pro všechny transakce spočítej nepoužité výstupy
+        $unspend_outputs=$this->graph_unused_outputs($graph);
+
+        return view('transaction/visualize', compact('transaction', 'currency', 'graph','unspend_outputs'));
+    }
+
+    /**
+     * Získání vstupů a výstupů transakce ve formátů JSON
+     * @param $currency
+     * @param $txid
+     * @return string
+     */
+    public function relations($currency, $txid)
+    {
+        $transactionModel           = CurrencyType::transactionModel($currency);
+        $graph                      = $transactionModel->findTransactionGraph($txid,1,1);
+
+        return $this->ajax_graph_expansion($graph);
+    }
+
+    /**
+     * Vytvoří odpověd pro Ajax požadavek na rozšíření grafu
+     *
+     * @param BitcoinTransactionGraphDto $graph
+     * @return string
+     */
+    private function ajax_graph_expansion(BitcoinTransactionGraphDto $graph)
+    {
+        $unused_output              = $this->graph_unused_outputs($graph);
+
+        $result = [
+            "transactions" => [],
+            "payments"     => [],
+            "unused_outputs" => []
+        ];
+
+        foreach ($graph->getTransactions() as $transaction)
+        {
+            $result["transactions"][]=[
+                "txid" => $transaction->getTxid(),
+                "coinbase" => $transaction->isCoinbase()
+            ];
         }
-        return view('transaction/visualize')->with('transaction', $transaction)->with('currency', $currency);
+
+        foreach ($graph->getPayments() as $payment)
+        {
+            $result["payments"][] = [
+                "address" => $payment->getAddress(),
+                "pays_from" => $payment->getPaysFrom(),
+                "pays_to" => $payment->getPaysTo(),
+                "value" => $payment->getValue()
+            ];
+        }
+
+        foreach ($unused_output as $output)
+        {
+            $result["unused_outputs"][] = [
+                "txid" => $output->getTransactionTxid(),
+                "address" => $output->getAddress(),
+                "value" => $output->getValue()
+            ];
+        }
+        return json_encode($result);
+    }
+
+    /**
+     * Pro graf transakcí vypočte nepoužité výstupy transakcí
+     * @param BitcoinTransactionGraphDto $graph
+     * @return array<BitcoinUnspendOutputDto>
+     */
+    private function graph_unused_outputs(BitcoinTransactionGraphDto $graph)
+    {
+        $unspend_outputs=array();
+        foreach ($graph->getTransactions() as $transaction)
+        {
+            foreach ($transaction->getOutputs() as $output)
+            {
+                if (!$output->isSpent())
+                {
+                    $unspend_outputs[]=new BitcoinUnspendOutputDto(
+                        $transaction->getTxid(),
+                        $output->getSerializedAddress(),
+                        $output->getValue());
+                }
+            }
+        }
+        return $unspend_outputs;
     }
 
     /**
@@ -107,52 +225,5 @@ class TransactionController extends Controller
         $transactionDto                    = $transactionModel->findByTxId($txid);
         $displayOnlyHeader = false;
         return view('transaction/structure',compact('transactionDto', 'displayOnlyHeader', 'tags', 'currency'));
-    }
-
-    /**
-     * Ziskanie informacie o vystupoch transakcie vo formate JSON.
-     * @param $txid
-     * @return string
-     */
-    public function outputs($currency, $txid)
-    {
-        $transactionModel          = CurrencyType::transactionModel($currency);
-        $addressModel              = CurrencyType::addressModel($currency);
-
-        $result = [
-            'name'      => 'source',
-            'children'  => [],
-        ];
-        $transaction = $transactionModel->findByTxId($txid);
-        if(empty($transaction)){
-            throw new NotFoundHttpException();
-        }
-
-        foreach($transaction->getOutputs() as $output){
-            $address = $output->getSerializedAddress();
-            $addressDto=$addressModel->addressExists($address);
-
-            $element = [
-                'name'          => $address,
-                'value'         => $output->getValue(),
-                'redeemed_tx'   => $output->isSpent() ? [$output->getSpentTxid()] : [],
-            ];
-
-            if ($addressDto != null) {
-                $tags = $addressModel->getTags($addressDto);
-                if (count($tags)) {
-                    $element['tag'] = $tags[0]->getTag();
-                    $element['url_tag'] = $tags[0]->getUrl();
-                    /* $element['tag']     = Arrays::get($tags, '0.tag', null);
-                     $element['url_tag'] = Arrays::get($tags, '0.url');*/
-                }
-            }
-            $result['children'][]   = $element;
-        }
-        $result['value'] = $transaction->getSumOfOutputs();
-        /**
-         * Serializacia vysledku do formatu JSON.
-         */
-        return json_encode($result);
     }
 }
