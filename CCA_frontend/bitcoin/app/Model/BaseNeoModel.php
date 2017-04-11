@@ -232,6 +232,79 @@ abstract class BaseNeoModel
     }
 
     /**
+     * Vloží do databáze pole záznamů, přičemž každý ze záznamů vloží unikátně
+     *
+     * @param array $nodes pole uzlů, přičemž každý uzel je pole typu [atribut] => hodnota
+     * @param string $merging_attribute Atribut na zakádě kterého spojovat uzly
+     * (pokud mají 2 uzly tento atribut stejný, nevytvoří se nový a ostatní hodnoty zůstanou nezměněny)
+     */
+    protected function bulkInsertUnique(array $nodes, $merging_attribute)
+    {
+        $nodes_attr=array();
+        $attr_keys=array();
+        foreach ($nodes as $node_values)
+        {
+            $node_attr=array();
+            foreach ($node_values as $key => $value)
+            {
+                $node_attr[]= "$key: '$value'";
+                $attr_keys[]=$key;
+            }
+            $nodes_attr[]= "{ ".implode(",",$node_attr). " }";
+        }
+
+        $attr_keys=array_unique($attr_keys);
+        $attr_strings=array();
+        foreach ($attr_keys as $key)
+        {
+            if ($key != $merging_attribute) {
+                $attr_strings[] = "n.$key = props.$key";
+            }
+        }
+
+        $query="FOREACH (props IN [".implode(", ",$nodes_attr)."]| 
+            MERGE (n:".$this->getEffectiveNodeName()."{
+                $merging_attribute: props.$merging_attribute
+            })";
+
+        if (count ($attr_strings) > 0) {
+            $query.=" ON CREATE SET ".implode(",", $attr_strings)." ";
+        }
+        $query.=")";
+
+        $this->neoConnection->run($query);
+    }
+
+    /**
+     * Vytvoří více relací v jednom kroku
+     * @param array $relations
+     */
+    protected function bulkCreateRelations(array $relations)
+    {
+        $i=0;
+        $match_query="";
+        $with_attrs=array();
+        $create_query="";
+        foreach ($relations as $relation)
+        {
+            $match_query.="MATCH (n$i:".$this->getEffectiveNodeName($relation->getSourceNode()).") ".$this->serializeWhereAttributes("n$i",$relation->getSourceAttributes())." 
+            ";
+            $match_query.="MATCH (n".($i+1).":".$this->getEffectiveNodeName($relation->getDestNode()).") ".$this->serializeWhereAttributes("n".($i+1),$relation->getDestAttributes())."
+            ";
+            $with_attrs[]="n$i";
+            $with_attrs[]="n".($i+1);
+            $create_query.="CREATE UNIQUE (n$i)-".$this->serializaRelationOption($relation->getRelationOptions())."->(n".($i+1).")
+            ";
+            $i+=2;
+        }
+        $query=$match_query." WITH ".implode(",",$with_attrs)."
+        ".$create_query;
+
+        $this->neoConnection->run($query);
+    }
+
+
+    /**
      * Upravý hodnoty uzlů v databázi
      *
      * @param $where_attr string Název atributu, podle kterého se nalezne updatovaný uzel

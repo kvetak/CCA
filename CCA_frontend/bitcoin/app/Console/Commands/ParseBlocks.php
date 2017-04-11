@@ -42,6 +42,11 @@ class ParseBlocks extends Command
     const GENESIS_BLOCK_PREVIOUS_HASH="0000000000000000000000000000000000000000000000000000000000000000";
 
     /**
+     * Kolik bloků se má zpracovat v jedné dávce načítání z blockchainu
+     */
+    const BLOCK_BURST=100;
+
+    /**
      * Název a popis konzolového příkazu
      * @var string
      */
@@ -127,6 +132,11 @@ class ParseBlocks extends Command
     private $scriptSigParser;
 
 
+    /**
+     * Kolik bloků zbývá ke zpracovaní v tomto běhu
+     * @var integer
+     */
+    private $remaining_to_parse;
 
     /**
      * Hash bloku který je právě zpracováván
@@ -209,11 +219,12 @@ class ParseBlocks extends Command
             $parser->startFrom(new PositionDto($this->name_of_first_file,0));
         }
 
-        // TODO vymyslet dávkování, ať se nenačítá ze vstupu 1 hodnota, ale něco většího
-        for ($i = 0 ; $i < $this->number_of_blocks ; $i++) // TODO: nastavit na hodnotu zadanou na vstupu
+        $this->remaining_to_parse=$this->number_of_blocks;
+
+        while(($block_count=$this->get_parse_count()) > 0)
         {
             // načtení bloků ze souborů blockchainu
-            $blocks= $parser->parse(1);
+            $blocks= $parser->parse($block_count);
 
             // zpracování bloku a uložení do db
             $processed_blocks=array();
@@ -238,6 +249,25 @@ class ParseBlocks extends Command
                 throw $e;
             }
             $this->positionManager->store($parser->getPosition());
+        }
+    }
+
+    /**
+     * Vrací počet bloků, které se mají parsovat v následující dávce
+     * @return int
+     */
+    private function get_parse_count()
+    {
+        if ($this->remaining_to_parse > self::BLOCK_BURST)
+        {
+            $this->remaining_to_parse -= self::BLOCK_BURST;
+            return self::BLOCK_BURST;
+        }
+        else
+        {
+            $return=$this->remaining_to_parse;
+            $this->remaining_to_parse=0;
+            return $return;
         }
     }
 

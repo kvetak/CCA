@@ -122,6 +122,26 @@ class BitcoinAddressModel extends BaseBitcoinModel
     }
 
     /**
+     * Unikátně vytvoří pole adres
+     *
+     * @param array<BitcoinAddressDto> $dtos adresy, které se mají vytvořit
+     */
+    public function storeBulkUniqueNodes(array $dtos)
+    {
+        $values=array();
+        foreach ($dtos as $dto)
+        {
+            $values[]=$this->dto_to_array($dto);
+        }
+        $this->bulkInsertUnique($values, self::DB_ADDRESS);
+    }
+
+    public function makeBulkRelation(array $rel)
+    {
+        $this->bulkCreateRelations($rel);
+    }
+
+    /**
      * Smaže všechny bloky
      */
     public function deleteAllNodes()
@@ -258,6 +278,11 @@ class BitcoinAddressModel extends BaseBitcoinModel
             array(self::DB_ADDRESS => $addressDto->getAddress()),
             self::DB_REL_PARTICIPATE
         );
+
+        // pokud tato adresa nefiguruje v žádných transakcích, vrať prázdné pole
+        if (count ($data) == 0){
+            return array();
+        }
 
         $result=array();
         $count = count($data[self::RETURN_NODES]);

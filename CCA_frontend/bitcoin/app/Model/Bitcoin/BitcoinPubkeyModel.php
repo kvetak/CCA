@@ -7,6 +7,7 @@ use App\Model\Bitcoin\Dto\BitcoinAddressDto;
 use App\Model\Bitcoin\Dto\BitcoinPubkeyDto;
 use App\Model\Bitcoin\ScriptParser\BaseScriptParser;
 use App\Model\Exceptions\PubkeyNotFoundException;
+use App\Model\RelationCreateDto;
 
 class BitcoinPubkeyModel extends BaseBitcoinModel
 {
@@ -193,21 +194,29 @@ class BitcoinPubkeyModel extends BaseBitcoinModel
         $addresses=$this->computeAddresses($compressedPubKey,$nonCompressedPubkey);
 
         // uložení adres a vazeb s adresami do databáze
+        $addressesDtos=array();
+        $relationDtos=array();
+
         foreach ($addresses as $address)
         {
-            if ($this->bitcoinAddressModel->addressExists($address) == null)
-            {
-                $addressDto=new BitcoinAddressDto();
-                $addressDto->setAddress($address);
-                $this->bitcoinAddressModel->storeNode($addressDto);
-            }
-            $this->makeRelation(
-                array(self::DB_COMPRESSED_PUBKEY => $compressedPubKey),
-                array(self::RELATION_TYPE => self::REL_DEFINES_ADDRESS),
-                BitcoinAddressModel::NODE_NAME,
-                array(BitcoinAddressModel::DB_ADDRESS => $address)
-            );
+            $addressDto=new BitcoinAddressDto();
+            $addressDto->setAddress($address);
+
+            $addressesDtos[]=$addressDto;
+
+            $relationDto=new RelationCreateDto();
+            $relationDto->setSourceNode(self::NODE_NAME);
+            $relationDto->setSourceAttributes(array(self::DB_COMPRESSED_PUBKEY => $compressedPubKey));
+            $relationDto->setDestNode(BitcoinAddressModel::NODE_NAME);
+            $relationDto->setDestAttributes(array(BitcoinAddressModel::DB_ADDRESS => $address));
+            $relationDto->setRelationOptions(array(self::RELATION_TYPE => self::REL_DEFINES_ADDRESS));
+
+            $relationDtos[]=$relationDto;
         }
+
+        $this->bitcoinAddressModel->storeBulkUniqueNodes($addressesDtos);
+        $this->bulkCreateRelations($relationDtos);
+
         // vytvoření clusteru z adres, se stejným klíčem
         $this->bitcoinClusterModel->clusterizeAddresses($addresses);
     }
@@ -261,6 +270,7 @@ class BitcoinPubkeyModel extends BaseBitcoinModel
      */
     private function getP2shAddress($publicKey)
     {
+        //reconstruct script
         $script="";
         $script.=bin2hex($this->baseScriptParser->OP_PUSH_NUMBER_1);
         $script.=dechex(strlen($publicKey)/2);
