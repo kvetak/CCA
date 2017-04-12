@@ -92,13 +92,20 @@ abstract class BaseNeoModel
      * @param int $skip - počet uzlů který bude přeskočen od začátku výstupu
      * @return array <ID ; array <property_name ; property_value>>;
      */
-    protected function findAllNodes($limit = 0, $skip = 0, $order_by=null, $order_datatype=null)
+    protected function findAllNodes($limit = null, $skip = null, $order_by=null, $order_datatype=null)
     {
-        $query_result=$this->neoConnection->run("MATCH (n:".$this->getEffectiveNodeName().") 
+        $query= "MATCH (n:".$this->getEffectiveNodeName().") 
             return n "
-            .$this->order_by_clause($order_by,$order_datatype,true).
-            " skip ".$skip." 
-            limit ".$limit);
+            .$this->order_by_clause($order_by,$order_datatype,true);
+            if ($skip != null) {
+                $query .= " skip " . $skip . " 
+            ";
+            }
+            if ($limit != null) {
+                $query.=" limit ".$limit;
+            }
+
+        $query_result=$this->neoConnection->run($query);
 
         $result=array();
         $records=$query_result->records();

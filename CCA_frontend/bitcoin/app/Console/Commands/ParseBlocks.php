@@ -221,6 +221,30 @@ class ParseBlocks extends Command
 
         $this->remaining_to_parse=$this->number_of_blocks;
 
+        /*
+        $id=0;
+        $step=10;
+        // dočasný kód - doplní do databáze relace mezi transakcemi
+        while(true) {
+            $transactions = $this->bitcoinTransactionModel->findAll($step, $id);
+            if (count($transactions) == 0){
+                break;
+            }
+            $id += count($transactions);
+            foreach ($transactions as $transaction) {
+                $transaction->getInputs();
+                $txid = $transaction->getTxid();
+                foreach ($transaction->getInputs() as $input) {
+                    $paymentDto = new BitcoinTransactionPaymentDto();
+                    $paymentDto->setPaysTo($txid);
+                    $paymentDto->setPaysFrom($input->getTxid());
+                    $paymentDto->setAddress($input->getSerializedAddress());
+                    $paymentDto->setValue($input->getValue());
+                    $this->bitcoinTransactionModel->addPaymentRelation($paymentDto);
+                }
+            }
+        }*/
+
         while(($block_count=$this->get_parse_count()) > 0)
         {
             // načtení bloků ze souborů blockchainu

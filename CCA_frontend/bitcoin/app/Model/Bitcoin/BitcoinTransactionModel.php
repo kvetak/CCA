@@ -121,6 +121,25 @@ class BitcoinTransactionModel extends BaseBitcoinModel
         $this->deleteAll();
     }
 
+    /**
+     * Vrací uzly z databáze, seřazené od nejnovějšího
+     * @param int $limit - Maximální počet uzlů, který bude vrácen
+     * @param int $skip - počet uzlů který bude přeskočen od začátku výstupu
+     * @return array <ID ; array <property_name ; property_value>>;
+     */
+    public function findAll($limit = 0, $skip = 0)
+    {
+        $data=$this->findAllNodes($limit,$skip);
+        $blocks=array();
+
+        foreach ($data as $block_data)
+        {
+            $blocks[]=$this->array_to_dto($block_data);
+        }
+
+        return $blocks;
+    }
+
 
     /**
      * Smaže všechny transakce, které patří do daného bloku
