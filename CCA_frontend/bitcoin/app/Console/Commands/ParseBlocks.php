@@ -221,8 +221,7 @@ class ParseBlocks extends Command
 
         $this->remaining_to_parse=$this->number_of_blocks;
 
-
-        $id=0;
+      /*  $id=0;
         $step=10;
         // dočasný kód - doplní do databáze relace mezi transakcemi
         while(true) {
@@ -232,17 +231,6 @@ class ParseBlocks extends Command
             }
             $id += count($transactions);
             foreach ($transactions as $transaction) {
-               /* $transaction->getInputs();
-                $txid = $transaction->getTxid();
-                foreach ($transaction->getInputs() as $input) {
-                    $paymentDto = new BitcoinTransactionPaymentDto();
-                    $paymentDto->setPaysTo($txid);
-                    $paymentDto->setPaysFrom($input->getTxid());
-                    $paymentDto->setAddress($input->getSerializedAddress());
-                    $paymentDto->setValue($input->getValue());
-                    $paymentDto->setVout($input->getVout());
-                    $this->bitcoinTransactionModel->addPaymentRelation($paymentDto);
-                }*/
 
                $fees=$transaction->getSumOfFees();
                $transaction->setSumOfFees(abs($fees));
@@ -261,8 +249,8 @@ class ParseBlocks extends Command
                 $block->setSumOfFees(abs($fees));
                 $this->bitcoinBlockModel->updateBlock($block);
             }
-        }
-/*
+        }*/
+
         while(($block_count=$this->get_parse_count()) > 0)
         {
             // načtení bloků ze souborů blockchainu
@@ -291,7 +279,7 @@ class ParseBlocks extends Command
                 throw $e;
             }
             $this->positionManager->store($parser->getPosition());
-        }*/
+        }
     }
 
     /**

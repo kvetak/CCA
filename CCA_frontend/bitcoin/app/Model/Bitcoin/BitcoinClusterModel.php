@@ -4,6 +4,7 @@ use App\Model\Bitcoin\Dto\BitcoinAddressDto;
 use App\Model\Bitcoin\Dto\BitcoinAddressTagDto;
 use App\Model\Bitcoin\Dto\BitcoinAddressUsageDto;
 use App\Model\Bitcoin\Dto\BitcoinClusterDto;
+use App\Model\RelationCreateDto;
 
 /**
  * Model pre pracu so zhlukami adries.
@@ -261,27 +262,30 @@ class BitcoinClusterModel extends BaseBitcoinModel
 
     /**
      * Spojení více clusterů do jednoho
-     * Smaže všechny zadané clustery a adresy z nich vloží do nového clusteru
      *
-     * // TODO optimalizace, nemazat všechny staré clustery, ale najít největší a do něj přiřadit ostatní adresy
-     *
-     * @param $clusters array<BitcoinClusterDto> Clustery které se mají spojit
-     * @return BitcoinClusterDto Výsledný cluster
+     * @param $clusterIDs array<int> Clustery které se mají spojit
+     * @return int Výsledný cluster
      */
-    private function mergeClusters(array $clusters)
+    private function mergeClusters(array $clusterIDs)
     {
-        $addresses=array();
-        foreach ($clusters as $cluster)
+        $target_cluster=null;
+        $cluster_ids=array();
+        foreach ($clusterIDs as $cluster)
         {
-            $addresses=array_merge($addresses,$cluster->getAddresses());
-            $this->deleteCluster($cluster->getId());
+            if ($target_cluster == null){
+                $target_cluster=$cluster;
+            }
+            else{
+                $cluster_ids[]="\"$cluster\"";
+            }
         }
-        return $this->createCluster($addresses);
+        $this->mergeRelationNodes(self::DB_REL_CONTAINS,self::DB_ID,"\"$target_cluster\"",$cluster_ids);
+        return $target_cluster;
     }
 
     /**
      * Vytvoří cluster se zadanými adresami
-     * @param array $addresses
+     * @param array<string. $addresses
      * @return BitcoinClusterDto Nově vytvořený cluster
      */
     private function createCluster(array $addresses)
@@ -291,16 +295,7 @@ class BitcoinClusterModel extends BaseBitcoinModel
         $dto->setId($new_id);
 
         $this->insertNode($dto);
-
-        foreach ($addresses as $address)
-        {
-            $this->makeRelation(
-                array(self::DB_ID => $new_id),
-                array(self::RELATION_TYPE => self::DB_REL_CONTAINS),
-                BitcoinAddressModel::NODE_NAME,
-                array(BitcoinAddressModel::DB_ADDRESS => $address->getAddress())
-            );
-        }
+        $this->addAddressesToCluster($dto->getId(), $addresses);
         return $dto;
     }
 
@@ -308,20 +303,25 @@ class BitcoinClusterModel extends BaseBitcoinModel
      * Přidá adresy do clusteru
      * Předpokládá že aktuálně adresy v žádném clustery nejsou
      *
-     * @param BitcoinClusterDto $clusterDto
-     * @param array $addresses
+     * @param int $clusterID
+     * @param array<string> $addresses
      */
-    private function addAddressesToCluster(BitcoinClusterDto $clusterDto, array $addresses)
+    private function addAddressesToCluster($clusterID, array $addresses)
     {
+        $relationDtos=array();
+
         foreach ($addresses as $address)
         {
-            $this->makeRelation(
-                array(self::DB_ID => $clusterDto->getId()),
-                array(self::RELATION_TYPE => self::DB_REL_CONTAINS),
-                BitcoinAddressModel::NODE_NAME,
-                array(BitcoinAddressModel::DB_ADDRESS => $address->getAddress())
-            );
+            $relationDto = new RelationCreateDto();
+            $relationDto->setSourceNode(self::NODE_NAME);
+            $relationDto->setSourceAttributes(array(self::DB_ID => $clusterID));
+            $relationDto->setDestNode(BitcoinAddressModel::NODE_NAME);
+            $relationDto->setDestAttributes(array(BitcoinAddressModel::DB_ADDRESS => $address));
+            $relationDto->setRelationOptions(array(self::RELATION_TYPE => self::DB_REL_CONTAINS));
+
+            $relationDtos[] = $relationDto;
         }
+        $this->bulkCreateRelations($relationDtos);
     }
 
     /**
@@ -339,7 +339,8 @@ class BitcoinClusterModel extends BaseBitcoinModel
             return;
         }
 
-        $clusters=array();
+        $cluster_ids=array();
+        $known_addresses=array();
         $not_in_cluster=array();
 
         /**
@@ -347,26 +348,33 @@ class BitcoinClusterModel extends BaseBitcoinModel
          **/
         foreach ($addresses as $address)
         {
-            $addressDto = $this->bitcoinAddressModel->findByAddress($address);
-            $cluster=$this->getClusterByAddress($addressDto);
-            if ($cluster != null)
+            if (in_array($address,$known_addresses))
             {
-                $cluster->setAddresses($this->getAddressesInCluster($cluster));
-                if (!isset($clusters[$cluster->getId()]))
-                {
-                    $clusters[$cluster->getId()] = $cluster;
-                }
+                continue;
             }
-            else
+
+            $data=$this->findNodesWithSameNeighbor(
+                BitcoinAddressModel::NODE_NAME,
+                self::DB_REL_CONTAINS,
+                array(BitcoinAddressModel::DB_ADDRESS => $address)
+            );
+
+            if (empty($data))
             {
-                $not_in_cluster[]=$addressDto;
+                $not_in_cluster[]=$address;
+            }
+            else {
+                $cluster_ids[] = $data[self::RETURN_COMMON_NODE][self::DB_ID];
+                foreach ($data[self::RETURN_NODES] as $node) {
+                    $known_addresses[] = $node[BitcoinAddressModel::DB_ADDRESS];
+                }
             }
         }
 
         /**
          * Spojení adres do jednoho clusteru
          */
-        $cluster_count=count($clusters);
+        $cluster_count=count($cluster_ids);
         // žádný cluster zatím není, je třeba všechny adresy vložit do nového clusteru
         if ($cluster_count == 0)
         {
@@ -378,13 +386,13 @@ class BitcoinClusterModel extends BaseBitcoinModel
         {
             if (count($not_in_cluster) > 0)
             {
-                $this->addAddressesToCluster(array_values($clusters)[0],$not_in_cluster);
+                $this->addAddressesToCluster($cluster_ids[0],$not_in_cluster);
             }
         }
         // adresy jsou ve více clusterech a navíc mohou být i mimo něj
         else
         {
-            $new_cluster=$this->mergeClusters($clusters);
+            $new_cluster=$this->mergeClusters($cluster_ids);
             if (count($not_in_cluster) > 0)
             {
                 $this->addAddressesToCluster($new_cluster,$not_in_cluster);

@@ -23,6 +23,7 @@ abstract class BaseNeoModel
         RELATION_PROPERTIES="properties";
 
     const RETURN_NODES="nodes",
+        RETURN_COMMON_NODE="common_node",
         RETURN_RELATIONS="relations",
         RETURN_RELATION_COUNT="rel_cnt";
 
@@ -477,6 +478,62 @@ abstract class BaseNeoModel
             $return[self::RETURN_NODES][$key] = $record->values()[0]->values();
             $return[self::RETURN_RELATIONS][$key] = $record->values()[1]->values();
         }
+        return $return;
+    }
+
+    /**
+     * Vyhledá několik uzlů a spojí jejich dané vazby na jeden určený uzel.
+     * Všechny ostatní uzly jsou smazány
+     *
+     * Je určeno pro spojování clusterů
+     *
+     * @param $relation_name - název spojované relace
+     * @param $where_property - atribut podle kterého se identifikují uzly
+     * @param $target_node - hodnota $where_property, která určuje, který uzel zůstane
+     * @param $merging_nodes - pole hodnot $where_property, které určují uzly, které budou spojeny a smazány
+     */
+    protected function mergeRelationNodes($relation_name, $where_property, $target_node, array $merging_nodes)
+    {
+        $query="MATCH (n:".$this->getEffectiveNodeName().")-[rel:".$relation_name."]->(a) WHERE n.".$where_property." IN [";
+        $query.=implode(",",$merging_nodes)."]
+        ";
+
+        $query.="MATCH (c:".$this->getEffectiveNodeName().") WHERE c.".$where_property." = ".$target_node."
+        DELETE rel
+        DELETE n
+        CREATE (c)-[:".$relation_name."]->(a)";
+
+        $this->neoConnection->run($query);
+    }
+
+    /**
+     * Najde uzel a všechny jeho sousedy podle dané relace, vyhledává podle jednoho ze sousedů
+     *
+     * @param string $node_name Název uzlu souseda
+     * @param string $relation_name název relace
+     * @param array $src_attributes atributy určující počátečního souseda
+     * @return array pole kde [self::RETURN_NODES] obsahuje data sousedů,
+     * [self::RETURN_COMMON_NODE] obsahuje jeden společný uzel
+     */
+    protected function findNodesWithSameNeighbor($node_name, $relation_name, array $src_attributes)
+    {
+        $query="MATCH (a:".$this->getEffectiveNodeName($node_name).")<-[:".$relation_name."]-(n)-[:".$relation_name."]->(b)
+         ".$this->serializeWhereAttributes("a",$src_attributes)." RETURN a,b,n";
+
+        $result=$this->neoConnection->run($query);
+
+        $return=array();
+        $base_node=false;
+        foreach ($result->records() as $key => $record)
+        {
+            if (!$base_node){
+                $return[self::RETURN_NODES][] = $record->values()[0]->values();
+                $base_node=true;
+            }
+            $return[self::RETURN_NODES][] = $record->values()[1]->values();
+            $return[self::RETURN_COMMON_NODE] = $record->values()[2]->values();
+        }
+
         return $return;
     }
 
