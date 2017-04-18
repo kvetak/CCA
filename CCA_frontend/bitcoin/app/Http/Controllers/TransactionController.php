@@ -175,7 +175,8 @@ class TransactionController extends Controller
                 "address" => $payment->getAddress(),
                 "pays_from" => $payment->getPaysFrom(),
                 "pays_to" => $payment->getPaysTo(),
-                "value" => $payment->getValue()
+                "value" => $payment->getValue(),
+                "vout" => $payment->getVout()
             ];
         }
 

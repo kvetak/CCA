@@ -31,6 +31,7 @@ abstract class NeoConnection
         if (self::$client == null) {
             self::$client = ClientBuilder::create()
                 ->addConnection('default', env("NEO4J_DB"))
+                ->setDefaultTimeout(env("DATABASE_TIMEOUT"))
                 ->build();
         }
 

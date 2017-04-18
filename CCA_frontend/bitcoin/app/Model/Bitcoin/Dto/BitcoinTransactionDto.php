@@ -188,6 +188,11 @@ class BitcoinTransactionDto
         return $this->sum_of_fees;
     }
 
+    public function getRoundedSumOfFees()
+    {
+        return round($this->sum_of_fees,2);
+    }
+
     /**
      * @param double $sum_of_fees
      */

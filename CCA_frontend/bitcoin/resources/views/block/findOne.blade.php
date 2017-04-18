@@ -54,7 +54,7 @@
             </tr>
             <tr>
                 <td><strong>Sum of fees</strong></td>
-                <td>{{$block->getSumOfFees()}} {{CurrencyType::currencyUnit($currency)}}</td>
+                <td>{{$block->getRoundedSumOfFees()}} {{CurrencyType::currencyUnit($currency)}}</td>
             </tr>
             <tr>
                 <td><strong>Number of transactions</strong></td>

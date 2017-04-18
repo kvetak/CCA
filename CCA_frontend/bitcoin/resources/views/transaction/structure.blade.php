@@ -61,7 +61,7 @@
 </div>
 <div class="row">
     <div class="col-md-4" style="padding: 0;">
-        <div class="btn btn-default btn-info"><strong>Fees:</strong> {{$transactionDto->getSumOfFees()}} {{CurrencyType::currencyUnit($currency)}}</div>
+        <div class="btn btn-default btn-info"><strong>Fees:</strong> {{$transactionDto->getRoundedSumOfFees()}} {{CurrencyType::currencyUnit($currency)}}</div>
     </div>
     <div class="col-md-8 text-right">
         <div role="group" aria-label="...">

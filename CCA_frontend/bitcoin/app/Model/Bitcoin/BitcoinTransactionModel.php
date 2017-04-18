@@ -36,7 +36,8 @@ class BitcoinTransactionModel extends BaseBitcoinModel
         DB_REL_PROP_FROM="from",
         DB_REL_PROP_TO="to",
         DB_REL_PROP_ADDRESS="addr",
-        DB_REL_PROP_VALUE="value";
+        DB_REL_PROP_VALUE="value",
+        DB_REL_PROP_VOUT="vout";
 
     private static $instance;
     /**
@@ -119,6 +120,11 @@ class BitcoinTransactionModel extends BaseBitcoinModel
     public function deleteAllNodes()
     {
         $this->deleteAll();
+    }
+
+    public function updateNode(BitcoinTransactionDto $dto)
+    {
+        $this->update(self::DB_TRANS_TXID,$dto->getTxid(), $this->dto_to_array($dto));
     }
 
     /**
@@ -264,6 +270,7 @@ class BitcoinTransactionModel extends BaseBitcoinModel
             $paymentDto->setPaysFrom($payment[self::DB_REL_PROP_FROM]);
             $paymentDto->setPaysTo($payment[self::DB_REL_PROP_TO]);
             $paymentDto->setAddress($payment[self::DB_REL_PROP_ADDRESS]);
+            $paymentDto->setVout($payment[self::DB_REL_PROP_VOUT]);
 
             $payments[]=$paymentDto;
         }
@@ -288,7 +295,8 @@ class BitcoinTransactionModel extends BaseBitcoinModel
                     self::DB_REL_PROP_ADDRESS => $dto->getAddress(),
                     self::DB_REL_PROP_FROM => $dto->getPaysFrom(),
                     self::DB_REL_PROP_TO => $dto->getPaysTo(),
-                    self::DB_REL_PROP_VALUE => $dto->getValue()
+                    self::DB_REL_PROP_VALUE => $dto->getValue(),
+                    self::DB_REL_PROP_VOUT => $dto->getVout()
                 )
             ),
             self::NODE_NAME,

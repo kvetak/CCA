@@ -49,7 +49,8 @@
                 address: "{{$payment->getAddress()}}",
                 pays_from: "{{$payment->getPaysFrom()}}",
                 pays_to: "{{$payment->getPaysTo()}}",
-                value: "{{$payment->getValue()}}"
+                value: "{{$payment->getValue()}}",
+                vout: "{{$payment->getVout()}}"
             }
         );
         @endforeach
@@ -151,7 +152,6 @@
             };
             network = new vis.Network(container, data, options);
 
-
             // legend
             var legend_div = document.getElementById('legend_div');
             var y = -200;
@@ -172,7 +172,6 @@
             legend_network = new vis.Network(legend_div, legend_data, options);
 
             network.on( 'click', function(properties){
-                console.log("clicked: ",properties);
                 var clickedNodes = nodes.get(properties.nodes);
                 var clickedEdges = edges.get(properties.edges);
 
@@ -186,9 +185,6 @@
                     else if (clickedEdges.length == 1){
                         window.open("/{{$currency}}/address/"+edge_id_map[clickedEdges[0].id].address);
                     }
-
-                    console.log('clicked nodes:', clickedNodes);
-                    console.log('clicked edges:', clickedEdges);
                 }
                 else
                 {
@@ -219,7 +215,7 @@
         function add_payment(payment)
         {
             edge_id_map[payment.edge_id]=payment;
-            existing_edges.push(payment.pays_from +"-" + payment.pays_to);
+            existing_edges.push(payment.pays_from +"-" + payment.vout + "-" + payment.pays_to);
 
             edges.add({id: payment.edge_id, from: transactions[payment.pays_from].node_id, to: transactions[payment.pays_to].node_id, label: payment.address + " (" + payment.value + " " +  currency + ")"});
         }
@@ -264,8 +260,7 @@
                         node_id: transaction_node_id++,
                         txid: entry.txid,
                         coinbase: entry.coinbase,
-                        expanded_inputs: false,
-                        expanded_outputs: false,
+                        expanded_relations: false,
                         unspend_outputs: false
                     };
                     add_node(new_transaction);
@@ -275,13 +270,14 @@
             for (key in data.payments)
             {
                 var payment= data.payments[key];
-                if ($.inArray(payment.pays_from + "-" + payment.pays_to,existing_edges) == -1) {
+                if ($.inArray(payment.pays_from + "-" + payment.vout + "-" + payment.pays_to,existing_edges) == -1) {
                     var new_payment = {
                         edge_id: edge_id++,
                         address: payment.address,
                         pays_from: payment.pays_from,
                         pays_to: payment.pays_to,
-                        value: payment.value
+                        value: payment.value,
+                        vout: payment.vout
                     };
                     payments.push(new_payment);
                     add_payment(payment);

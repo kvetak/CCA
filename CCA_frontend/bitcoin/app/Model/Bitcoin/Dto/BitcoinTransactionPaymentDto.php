@@ -30,6 +30,12 @@ class BitcoinTransactionPaymentDto
     private $value;
 
     /**
+     * Number of output in transaction
+     * @var int
+     */
+    private $vout;
+
+    /**
      * @return mixed
      */
     public function getAddress()
@@ -91,5 +97,21 @@ class BitcoinTransactionPaymentDto
     public function setValue($value)
     {
         $this->value = $value;
+    }
+
+    /**
+     * @return int
+     */
+    public function getVout()
+    {
+        return $this->vout;
+    }
+
+    /**
+     * @param int $vout
+     */
+    public function setVout($vout)
+    {
+        $this->vout = $vout;
     }
 }

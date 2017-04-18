@@ -221,7 +221,7 @@ class ParseBlocks extends Command
 
         $this->remaining_to_parse=$this->number_of_blocks;
 
-        /*
+
         $id=0;
         $step=10;
         // dočasný kód - doplní do databáze relace mezi transakcemi
@@ -232,7 +232,7 @@ class ParseBlocks extends Command
             }
             $id += count($transactions);
             foreach ($transactions as $transaction) {
-                $transaction->getInputs();
+               /* $transaction->getInputs();
                 $txid = $transaction->getTxid();
                 foreach ($transaction->getInputs() as $input) {
                     $paymentDto = new BitcoinTransactionPaymentDto();
@@ -240,11 +240,29 @@ class ParseBlocks extends Command
                     $paymentDto->setPaysFrom($input->getTxid());
                     $paymentDto->setAddress($input->getSerializedAddress());
                     $paymentDto->setValue($input->getValue());
+                    $paymentDto->setVout($input->getVout());
                     $this->bitcoinTransactionModel->addPaymentRelation($paymentDto);
-                }
-            }
-        }*/
+                }*/
 
+               $fees=$transaction->getSumOfFees();
+               $transaction->setSumOfFees(abs($fees));
+               $this->bitcoinTransactionModel->updateNode($transaction);
+            }
+        }
+        $id=0;
+        while(true) {
+            $blocks = $this->bitcoinBlockModel->findAll($step, $id);
+            if (count($blocks) == 0) {
+                break;
+            }
+            $id += count($blocks);
+            foreach ($blocks as $block) {
+                $fees = $block->getSumOfFees();
+                $block->setSumOfFees(abs($fees));
+                $this->bitcoinBlockModel->updateBlock($block);
+            }
+        }
+/*
         while(($block_count=$this->get_parse_count()) > 0)
         {
             // načtení bloků ze souborů blockchainu
@@ -273,7 +291,7 @@ class ParseBlocks extends Command
                 throw $e;
             }
             $this->positionManager->store($parser->getPosition());
-        }
+        }*/
     }
 
     /**
@@ -416,6 +434,7 @@ class ParseBlocks extends Command
                    $paymentDto->setPaysFrom($inputDto->getTxid());
                    $paymentDto->setAddress($inputDto->getSerializedAddress());
                    $paymentDto->setValue($inputDto->getValue());
+                   $paymentDto->setVout($inputDto->getVout());
 
                    $paymentDtos[]=$paymentDto;
                }
@@ -452,7 +471,7 @@ class ParseBlocks extends Command
             $transaction_fee=0;
             // v coinbase transakci se nepočítají poplatky
             if (!$coinbase) {
-                $transaction_fee = $sum_of_transaction_outputs - $sum_of_transaction_inputs;
+                $transaction_fee = $sum_of_transaction_inputs - $sum_of_transaction_outputs;
                 $sum_of_fees += $transaction_fee;
             }
             $transactionDto->setCoinbase($coinbase);

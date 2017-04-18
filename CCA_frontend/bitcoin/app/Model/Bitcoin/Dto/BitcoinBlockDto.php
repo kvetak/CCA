@@ -212,6 +212,11 @@ class BitcoinBlockDto
         $this->sum_of_fees = $sum_of_fees;
     }
 
+    public function getRoundedSumOfFees()
+    {
+        return round($this->sum_of_fees,2);
+    }
+
     /**
      * @return int
      */
