@@ -72,4 +72,33 @@ class AddressController extends Controller
         $addressTags       = $clusterModel->getAddressTags($cluster);
         return view('address/clusterForAddress', compact('addressDto', 'cluster', 'pagination', 'addresses', 'currency','clusterModel', 'addressTags'));
     }
+
+    public function exportAddress($currency, $address)
+    {
+        $limit = 10000;
+
+        view()->composer('transaction.transactionListItem', function($view) use($currency) {
+            $view->with('currency', $currency);
+        });
+        $addressModelName       = CurrencyType::addressModel($currency);
+        $addressDto             = $addressModelName->findByAddress($address);
+        $transactions       = $addressModelName->getTransactions($addressDto);
+        $pagination         = new LengthAwarePaginator([], count($transactions), $limit);
+        $pagination->setPath(route('address_findone', ['address'=>$addressDto->getAddress(), 'currency' => $currency]));
+        return view('address/export', compact('addressDto','transactions', 'pagination', 'currency'));
+    }
+
+    public function exportAddressCSV($currency, $address)
+    {
+        $limit = 10000;
+
+        view()->composer('transaction.transactionListItem', function($view) use($currency) {
+            $view->with('currency', $currency);
+        });
+        $addressModelName       = CurrencyType::addressModel($currency);
+        $addressDto             = $addressModelName->findByAddress($address);
+        $transactions       = $addressModelName->getTransactions($addressDto);
+        return view('address/exportcsv', compact('addressDto','transactions', 'currency'));
+    }
+
 }

@@ -89,6 +89,16 @@ Route::group(['middleware' => ['web'], 'prefix' => '{currency}'], function () {
         'uses'      => 'AddressController@clusterForAddress'
     ]);
 
+    Route::get('address/{address}/export', [
+        'as'        => 'address_export',
+        'uses'      => 'AddressController@exportAddress'
+    ]);
+
+    Route::get('address/{address}/exportcsv', [
+        'as'        => 'address_exportcsv',
+        'uses'      => 'AddressController@exportAddressCSV'
+    ]);
+
     Route::post('search', [
         'as'    => 'search',
         'uses'  => 'SearchController@search'
