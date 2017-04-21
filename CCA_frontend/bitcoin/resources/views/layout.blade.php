@@ -55,9 +55,11 @@
             <a href="#0" class="cd-top">Top</a>
         </div>
     </div>
+    <!--
     <footer>
         Bitcoin Blockchain analysis
     </footer>
+    -->
 </div>
 </body>
 <script type="text/javascript" href="/js/modernizr.js"></script>

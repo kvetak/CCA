@@ -47,7 +47,9 @@
                         <tr>
                             <th>Tools</th>
                             <td>
-                                <a href="{{route('address_cluster', ['address' => $addressDto->getAddress(), 'currency'=>$currency])}}">Show addresses with same owner</a>
+                                <p><a href="{{route('address_cluster', ['address' => $addressDto->getAddress(), 'currency'=>$currency])}}">Show addresses with same owner</a></p>
+                                <p><a href="{{route('address_export', ['address' => $addressDto->getAddress(), 'currency'=>$currency])}}">Export transactions to rich-text</a></p>
+                                <p><a href="{{route('address_exportcsv', ['address' => $addressDto->getAddress(), 'currency'=>$currency])}}">Export transactions to CSV</a></p>
                             </td>
                         </tr>
                         </tbody>
