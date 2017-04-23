@@ -19,11 +19,11 @@
                             @if(!empty($cluster))
                                 <tr>
                                     <td>Total balance</td>
-                                    <td>{{$clusterModel->getBalance($cluster)}} {{CurrencyType::currencyUnit($currency)}}</td>
+                                    <td>{{round($clusterModel->getBalance($cluster),8)}} {{CurrencyType::currencyUnit($currency)}}</td>
                                 </tr>
                                 <tr>
                                     <td>Number of addresses in cluster</td>
-                                    <td>{{count($cluster->getAddresses())}}</td>
+                                    <td>{{count($addressTags)}}</td>
                                 </tr>
                             @endif
                             </tbody>

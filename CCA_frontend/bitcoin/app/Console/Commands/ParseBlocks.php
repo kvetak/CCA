@@ -412,7 +412,7 @@ class ParseBlocks extends Command
                    }
                    $parsedScriptSig=$this->scriptSigParser->parse($script_sig,$outputDto->getRedeemerDto());
                    $inputDto->setParsedScriptSig($parsedScriptSig);
-                   $this->bitcoinPubkeyModel->clusterizeKeys($parsedScriptSig->getPubkeys());
+//                   $this->bitcoinPubkeyModel->clusterizeKeys($parsedScriptSig->getPubkeys());
 
                    $this->bitcoinTransactionModel->updateTransactionOutput($inputDto->getTxid(),$inputDto->getVout(),$outputDto);
                    $sum_of_transaction_inputs += $inputDto->getValue();
@@ -475,7 +475,7 @@ class ParseBlocks extends Command
             $transactionDtos[]=$transactionDto;
 
             $this->store_address_balance_changes($address_balances,$txid);
-            $this->bitcoinClusterModel->clusterizeAddresses(array_unique($input_clusterize_addresses));
+           // $this->bitcoinClusterModel->clusterizeAddresses(array_unique($input_clusterize_addresses));
 
             foreach ($paymentDtos as $paymentDto) {
                 $this->bitcoinTransactionModel->addPaymentRelation($paymentDto);

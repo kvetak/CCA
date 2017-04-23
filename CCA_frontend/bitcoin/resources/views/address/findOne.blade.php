@@ -18,7 +18,7 @@
                         <tbody>
                         <tr>
                             <th>Balance</th>
-                            <td>{{$addressDto->getBalance()}} {{CurrencyType::currencyUnit($currency)}}</td>
+                            <td>{{round($addressDto->getBalance(),8)}} {{CurrencyType::currencyUnit($currency)}}</td>
                         </tr>
                         <tr>
                             <th>Transactions</th>
