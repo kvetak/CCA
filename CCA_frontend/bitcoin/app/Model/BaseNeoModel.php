@@ -46,16 +46,6 @@ abstract class BaseNeoModel
     protected abstract function getEffectiveNodeName($node_name=null);
 
     /**
-     * Vrátí kolektci všech uzlů daného typu
-     * @return array
-     */
-    protected function collection()
-    {
-        $result = $this->neoConnection->run("MATCH (list:".$this->getEffectiveNodeName().") RETURN list");
-        return $result->getRecords();
-    }
-
-    /**
      * Vrací počet uzlů daného jména v databázi
      * @return int
      */

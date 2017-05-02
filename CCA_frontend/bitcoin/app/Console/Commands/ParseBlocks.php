@@ -221,36 +221,6 @@ class ParseBlocks extends Command
 
         $this->remaining_to_parse=$this->number_of_blocks;
 
-      /*  $id=0;
-        $step=10;
-        // dočasný kód - doplní do databáze relace mezi transakcemi
-        while(true) {
-            $transactions = $this->bitcoinTransactionModel->findAll($step, $id);
-            if (count($transactions) == 0){
-                break;
-            }
-            $id += count($transactions);
-            foreach ($transactions as $transaction) {
-
-               $fees=$transaction->getSumOfFees();
-               $transaction->setSumOfFees(abs($fees));
-               $this->bitcoinTransactionModel->updateNode($transaction);
-            }
-        }
-        $id=0;
-        while(true) {
-            $blocks = $this->bitcoinBlockModel->findAll($step, $id);
-            if (count($blocks) == 0) {
-                break;
-            }
-            $id += count($blocks);
-            foreach ($blocks as $block) {
-                $fees = $block->getSumOfFees();
-                $block->setSumOfFees(abs($fees));
-                $this->bitcoinBlockModel->updateBlock($block);
-            }
-        }*/
-
         while(($block_count=$this->get_parse_count()) > 0)
         {
             // načtení bloků ze souborů blockchainu
@@ -447,7 +417,7 @@ class ParseBlocks extends Command
                $outputDto->setRedeemerDto($redeemerDto);
 
                $address_balances = $this->add_address_balance($address_balances,BitcoinUtils::get_billable_address($redeemerDto), $outputDto->getValue());
-               $this->bitcoinPubkeyModel->clusterizeKeys($redeemerDto->getPubkeys());
+//               $this->bitcoinPubkeyModel->clusterizeKeys($redeemerDto->getPubkeys());
 
                $sum_of_transaction_outputs += $outputDto->getValue();
                $outputDtos[]=$outputDto;
